@@ -2,7 +2,9 @@ pub use std::error::Error;
 use core::fmt;
 
 #[derive(Debug)]
-pub struct ErrorSide;
+pub enum ErrorSide {
+    PayloadSizeMismatch
+}
 
 impl fmt::Display for ErrorSide {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

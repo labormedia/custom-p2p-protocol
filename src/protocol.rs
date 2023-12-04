@@ -42,9 +42,9 @@ pub enum Command {
 impl Command {
     pub fn to_bytes(&self) -> [u8;COMMAND_NAME_SIZE] {
         match self {
-            Command::Ping(nonce) => {
+            Command::Ping(_nonce) => {
                 let mut command = [0; COMMAND_NAME_SIZE];
-                let mut command_name_bytes = self.to_string().into_bytes();
+                let command_name_bytes = self.to_string().into_bytes();
                 let command_bytes_len = command_name_bytes.len();
                 // Fills the command with the appropiate size in bytes
                 for i in 0..(COMMAND_NAME_SIZE) {
@@ -58,7 +58,7 @@ impl Command {
             },
             Command::Verack => {
                 let mut command = [0; COMMAND_NAME_SIZE];
-                let mut command_name_bytes = self.to_string().into_bytes();
+                let command_name_bytes = self.to_string().into_bytes();
                 let command_bytes_len = command_name_bytes.len();
                 // Fills the command with the appropiate size in bytes
                 for i in 0..(COMMAND_NAME_SIZE) {
@@ -92,18 +92,19 @@ pub struct MessageHeader {
 }
 
 impl MessageHeader {
-    // pub fn ping() -> Result<Self, Box<dyn errors::Error>> {
-    //     Ok(Self {
-    //         start_string: NETWORK.value(),
-    //         command_name: Command::Ping([0,0,0,0,0,0,0,0]).to_bytes(),
-    //         payload_size: [0x00, 0x00, 0x00, 0x00],
-    //         checksum: [0x5d, 0xf6, 0xe0, 0xe2] // Empty checksum 0x5df6e0e2
-    //     })
-    // }
+    pub fn ping() -> Result<Self, Box<dyn errors::Error>> {
+        let nonce = [0,0,0,0,0,0,0,0];
+        Ok(Self {
+            start_string: NETWORK.value(),
+            command_name: Command::Ping(nonce).to_bytes(),
+            payload_size: [0x00, 0x00, 0x00, 0xff],
+            checksum: [0x5d, 0xf6, 0xe0, 0xe2] // Empty checksum 0x5df6e0e2
+        })
+    }
     pub fn verack() -> Result<Self, Box<dyn errors::Error>> {
         Ok(Self {
             start_string: NETWORK.value(),
-            command_name: Command::Ping([0,0,0,0,0,0,0,0]).to_bytes(),
+            command_name: Command::Verack.to_bytes(),
             payload_size: [0x00, 0x00, 0x00, 0x00],
             checksum: [0x5d, 0xf6, 0xe0, 0xe2] // Empty checksum 0x5df6e0e2
         })
@@ -129,8 +130,11 @@ impl MessageHeader {
         Ok(buf)
     }
     pub fn to_bytes_with_payload(&mut self, payload: &[u8]) -> Result<[u8;COMMAND_SIZE], Box<dyn errors::Error>> {
+        if array_from_usize(payload.len()) != self.payload_size {
+            return Err(Box::new(errors::ErrorSide::PayloadSizeMismatch))
+        };
         let payload_size = payload.len();
-        self.payload_size = array_from_usize(payload_size);
+        self.payload_size = array_from_usize(payload_size); // repeats the complete rutine
         self.checksum = checksum(payload);
         let mut buf = [0;COMMAND_SIZE];
         let mut cursor: usize = 0;
@@ -138,22 +142,26 @@ impl MessageHeader {
             buf[i] = self.start_string[i]
         }
         cursor = cursor + START_STRING_SIZE;
-        for i in cursor..COMMAND_NAME_SIZE {
+        for i in cursor..(START_STRING_SIZE + COMMAND_NAME_SIZE) {
             buf[i] = self.command_name[i]
         }
         cursor = cursor + COMMAND_NAME_SIZE;
-        for i in cursor..PAYLOAD_SIZE_SIZE {
+        for i in cursor..(START_STRING_SIZE + COMMAND_NAME_SIZE + PAYLOAD_SIZE_SIZE) {
             buf[i] = self.payload_size[i]
         }
         cursor = cursor + PAYLOAD_SIZE_SIZE;
-        for i in cursor..CHECKSUM_SIZE {
+        for i in cursor..(START_STRING_SIZE + COMMAND_NAME_SIZE + PAYLOAD_SIZE_SIZE + CHECKSUM_SIZE) {
             buf[i] = self.checksum[i]
-        }
+        } 
+        // cursor = cursor + payload_size;
+        // for i in cursor..(START_STRING_SIZE + COMMAND_NAME_SIZE + PAYLOAD_SIZE_SIZE + CHECKSUM_SIZE + payload_size) {
+        //     buf[i] = payload[i]
+        // }
         Ok(buf)
     }
 }
 
-fn array_from_usize(size: usize) -> [u8;4] {
+fn array_from_usize(size: usize) -> [u8; 4] {
     let b1 : u8 = ((size >> 24) & 0xff) as u8;
     let b2 : u8 = ((size >> 16) & 0xff) as u8;
     let b3 : u8 = ((size >> 8) & 0xff) as u8;
