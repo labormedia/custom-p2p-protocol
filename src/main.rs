@@ -43,7 +43,7 @@ async fn stream_process(target: SocketAddr) -> Result<(), Box<dyn errors::Error>
     let stream = TcpStream::connect(target).await?;
     let (read, write) = stream.into_split();
     // let mut command_bytes = protocol::Command::Ping([1,0,0,0,0,0,1,0]).to_bytes();
-    let ping_header = protocol::MessageHeader::ping();
+    let ping_header = protocol::MessageHeader::ping()?.to_bytes();
     drop(write);
     Ok(())
 }

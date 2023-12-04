@@ -86,7 +86,7 @@ impl MessageHeader {
             checksum: [0x5d, 0xf6, 0xe0, 0xe2] // Empty checksum 0x5df6e0e2
         })
     }
-    fn to_bytes(&self) -> Result<[u8;COMMAND_SIZE], Box<dyn errors::Error>> {
+    pub fn to_bytes(&self) -> Result<[u8;COMMAND_SIZE], Box<dyn errors::Error>> {
         let mut buf = [0;COMMAND_SIZE];
         let mut cursor: usize = 0;
         for i in cursor..START_STRING_SIZE {
