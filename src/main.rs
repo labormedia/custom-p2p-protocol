@@ -40,10 +40,18 @@ async fn main() -> Result<(), Box<dyn errors::Error>> {
 
 async fn stream_process(target: SocketAddr) -> Result<(), Box<dyn errors::Error>> {
     println!("Resolving for {:?}", target);
-    let stream = TcpStream::connect(target).await?;
-    let (read, write) = stream.into_split();
+    let mut stream = TcpStream::connect(target).await?;
+    // let (reader, mut writer) = stream.into_split();
     // let mut command_bytes = protocol::Command::Ping([1,0,0,0,0,0,1,0]).to_bytes();
-    let ping_header = protocol::MessageHeader::ping()?.to_bytes();
-    drop(write);
+    // let ping_header = protocol::MessageHeader::ping()?.to_bytes()?;
+    let verack_header = protocol::MessageHeader::verack()?.to_bytes()?;
+    let _ = stream.write_all(&verack_header).await?;
+    // read data from IO
+    let mut buf_reader = BufReader::new(stream);
+    let mut rx = buf_reader.fill_buf().await?;
+    let rx_len = rx.len();
+    println!("Received {} bytes", rx_len);
+    println!("Payload {:?}", rx);
+    drop(buf_reader);
     Ok(())
 }
