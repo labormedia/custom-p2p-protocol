@@ -61,7 +61,8 @@ async fn main() -> Result<(), Box<dyn errors::Error>> {
 async fn stream_process(target: SocketAddr) -> Result<Vec<u8>, Box<dyn errors::Error>> {
     println!("Resolving for {:?}", target);
     let mut stream = TcpStream::connect(target).await?;
-    let ping_header = protocol::MessageHeader::ping()?.to_bytes()?;
+    let payload: [u8; 8] = [0,0,0,0,0,0,0,0];
+    let ping_header = protocol::MessageHeader::ping()?.to_bytes_with_payload(&payload)?;
     // let verack_header = protocol::MessageHeader::verack()?.to_bytes()?;
     let _ = stream.write_all(&ping_header).await?;
     // read data from stream
