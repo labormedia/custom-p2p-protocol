@@ -42,9 +42,8 @@ async fn stream_process(target: SocketAddr) -> Result<(), Box<dyn errors::Error>
     println!("Resolving for {:?}", target);
     let stream = TcpStream::connect(target).await?;
     let (read, write) = stream.into_split();
-    let mut buf = Vec::with_capacity(24);
-    buf.write_all(&protocol::StartString::Mainnet.value()).await?;
-    let mut command_bytes = protocol::Command::Ping([1,0,0,0,0,0,1,0]).to_bytes();
+    // let mut command_bytes = protocol::Command::Ping([1,0,0,0,0,0,1,0]).to_bytes();
+    let ping_header = protocol::MessageHeader::ping();
     drop(write);
     Ok(())
 }
