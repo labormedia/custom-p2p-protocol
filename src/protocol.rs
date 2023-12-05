@@ -6,7 +6,10 @@ use core::{
 };
 use sha2::{Digest, Sha256};
 
-use crate::errors;
+use crate::{
+    errors,
+    payload::Version,
+};
 
 pub const COMMAND_SIZE: usize = 24;
 pub const COMMAND_NAME_SIZE: usize = 12;
