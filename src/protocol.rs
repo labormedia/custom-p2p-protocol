@@ -150,7 +150,7 @@ pub struct MessageHeader {
 impl MessageHeader {
     pub fn ping() -> Result<Self, Box<dyn errors::Error>> {
         let nonce: [u8; 8] = [0,0,0,0,0,0,0,0];
-        let payload_size = le_array_from_usize(nonce.len());
+        let payload_size = le_array_from_usize(nonce.len().try_into()?);
         let checksum = le_checksum(&nonce);
         Ok(Self {
             start_string: NETWORK.le_value(),
@@ -189,11 +189,11 @@ impl MessageHeader {
         Ok(buf)
     }
     pub fn to_bytes_with_payload(&mut self, payload: &[u8]) -> Result<[u8;COMMAND_SIZE], Box<dyn errors::Error>> {
-        if le_array_from_usize(payload.len()) != self.payload_size {
+        if le_array_from_usize(payload.len().try_into()?) != self.payload_size {
             return Err(Box::new(errors::ErrorSide::PayloadSizeMismatch(Box::new(self.payload_size))))
         };
         let payload_size = payload.len();
-        self.payload_size = le_array_from_usize(payload_size); // repeats the complete rutine
+        self.payload_size = le_array_from_usize(payload_size.try_into()?); // repeats the complete rutine
         self.checksum = le_checksum(payload);
         let mut buf = [0;COMMAND_SIZE];
         let mut cursor: usize = 0;
@@ -223,7 +223,7 @@ impl MessageHeader {
     }
 }
 
-fn le_array_from_usize(size: usize) -> [u8; 4] {
+fn le_array_from_usize(size: u32) -> [u8; 4] {
     let b1 : u8 = ((size >> 24) & 0xff) as u8;
     let b2 : u8 = ((size >> 16) & 0xff) as u8;
     let b3 : u8 = ((size >> 8) & 0xff) as u8;
@@ -250,4 +250,10 @@ pub fn le_checksum(data: &[u8]) -> [u8; CHECKSUM_SIZE] {
 fn check_command_size() {
     let total_size = START_STRING_SIZE + COMMAND_NAME_SIZE + PAYLOAD_SIZE_SIZE + CHECKSUM_SIZE;
     assert_eq!(total_size, COMMAND_SIZE)
+}
+
+#[test]
+fn check_le_array_from_usize_endianess() {
+    let num: u32 = 42;
+    assert_eq!(le_array_from_usize(num.try_into().unwrap()), num.to_le_bytes());
 }
