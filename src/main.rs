@@ -65,9 +65,12 @@ async fn stream_process(target: SocketAddr) -> Result<Vec<u8>, Box<dyn errors::E
     ping_header_with_payload[protocol::COMMAND_SIZE..].copy_from_slice(&payload);
     #[cfg(debug_assertions)]
     println!("Bytes to send {:?}", ping_header_with_payload);
-    // let verack_header = protocol::MessageHeader::verack()?.to_bytes()?;
     let _ = stream.write_all(&ping_header_with_payload).await?;
+
+    // writes a verack message header to stream buffer.
+    // let verack_header = protocol::MessageHeader::verack()?.to_bytes()?;
     // let _ = stream.write_all(&verack_header).await?;
+
     // read data from stream
     let mut buf_reader = BufReader::new(stream);
     let rx = buf_reader.fill_buf().await?;

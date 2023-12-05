@@ -25,24 +25,24 @@ impl StartString {
     pub fn le_value(&self) -> [u8; 4] {
         match self {
             StartString::Mainnet => {
-                // [0xf9, 0xbe, 0xb4, 0xd9] // Big endian
-                [0xd9, 0xb4, 0xbe, 0xf9] // Little endian
+                [0xf9, 0xbe, 0xb4, 0xd9] // Little endian
+                // [0xd9, 0xb4, 0xbe, 0xf9] // Big endian
             },
             StartString::Testnet => {
-                // [0x0b, 0x11, 0x09, 0x07] // Big endian
-                [0x07, 0x09, 0x11, 0x0b] // Little endian
+                [0x0b, 0x11, 0x09, 0x07] // Little endian
+                // [0x07, 0x09, 0x11, 0x0b] // Big endian
             }
         }
     }
     pub fn be_value(&self) -> [u8; 4] {
         match self {
             StartString::Mainnet => {
-                [0xf9, 0xbe, 0xb4, 0xd9] // Big endian
-                // [0xd9, 0xb4, 0xbe, 0xf9] // Little endian
+                // [0xf9, 0xbe, 0xb4, 0xd9] // Little endian
+                [0xd9, 0xb4, 0xbe, 0xf9] // Big endian
             },
             StartString::Testnet => {
-                [0x0b, 0x11, 0x09, 0x07] // Big endian
-                // [0x07, 0x09, 0x11, 0x0b] // Little endian
+                // [0x0b, 0x11, 0x09, 0x07] // Little endian
+                [0x07, 0x09, 0x11, 0x0b] // Big endian
             }
         }
     }
@@ -231,7 +231,7 @@ fn le_array_from_usize(size: usize) -> [u8; 4] {
     return [b4, b3, b2, b1]  // Little Endianess
 }
 
-pub fn le_checksum(data: &[u8]) -> [u8; 4] {
+pub fn le_checksum(data: &[u8]) -> [u8; CHECKSUM_SIZE] {
     let mut hasher = Sha256::new();
     hasher.update(data);
     let hash = hasher.finalize();
