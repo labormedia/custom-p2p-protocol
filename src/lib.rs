@@ -2,50 +2,16 @@ pub mod errors;
 pub mod payload;
 pub mod traits;
 pub mod command;
+pub mod magic_bytes;
 
 pub use command::Command;
-pub use traits::endian::EndianWrite;
+pub use traits::EndianWrite;
 pub use payload::{
     VersionPayload,
     PingPayload,
 };
+use magic_bytes::Network;
 use sha2::{Digest, Sha256};
-
-pub enum StartString {
-    Mainnet,
-    Testnet,
-}
-
-impl EndianWrite for StartString {
-    type Array = [u8;4];
-    fn to_le_bytes(&self) -> Self::Array {
-        match self {
-            StartString::Mainnet => {
-                [0xf9, 0xbe, 0xb4, 0xd9] // Little endian
-                // [0xd9, 0xb4, 0xbe, 0xf9] // Big endian
-            },
-            StartString::Testnet => {
-                [0x0b, 0x11, 0x09, 0x07] // Little endian
-                // [0x07, 0x09, 0x11, 0x0b] // Big endian
-            }
-        }
-    }
-    fn to_be_bytes(&self) -> Self::Array {
-        match self {
-            StartString::Mainnet => {
-                // [0xf9, 0xbe, 0xb4, 0xd9] // Little endian
-                [0xd9, 0xb4, 0xbe, 0xf9] // Big endian
-            },
-            StartString::Testnet => {
-                // [0x0b, 0x11, 0x09, 0x07] // Little endian
-                [0x07, 0x09, 0x11, 0x0b] // Big endian
-            }
-        }
-    }
-}
-
-
-
 
 // Size constants for version 70015
 pub const COMMAND_SIZE: usize = 24;
@@ -55,7 +21,7 @@ pub const PAYLOAD_SIZE_SIZE: usize = 4;
 pub const CHECKSUM_SIZE: usize = 4;
 pub const MAX_PAYLOAD_SIZE: usize = 32 * 1024 * 1024;
 
-pub const NETWORK: StartString = StartString::Mainnet;
+pub const NETWORK: Network = Network::Mainnet;
 
 impl EndianWrite for Command {
     type Array = [u8;COMMAND_NAME_SIZE];

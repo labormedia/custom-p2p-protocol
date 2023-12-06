@@ -1,3 +1,6 @@
+// Opaque types
+
+#[derive(Default, Clone)]
 pub struct VersionPayload {
     version: [u8; 4],
     services: [u8; 8],
