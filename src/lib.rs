@@ -133,23 +133,28 @@ impl MessageHeader {
         self.payload_size = u32_to_le_bytes(payload_size.try_into()?); // repeats the complete rutine
         self.checksum = le_checksum(payload);
         let mut buf = [0;COMMAND_SIZE];
-        let mut cursor: usize = 0;
         let byte_sequence = [START_STRING_SIZE, COMMAND_NAME_SIZE, PAYLOAD_SIZE_SIZE, CHECKSUM_SIZE];
-        for i in 0..byte_sequence[0] {
-            buf[i] = self.start_string[i]
+
+        
+        { // serialization rutine
+            let mut cursor: usize = 0;
+            for i in 0..byte_sequence[0] {
+                buf[i + cursor] = self.start_string[i]
+            }
+            cursor = byte_sequence[0];
+            for i in 0..(byte_sequence[1]) {
+                buf[i + cursor] = self.command_name[i]
+            }
+            cursor = cursor + byte_sequence[1];
+            for i in 0..(byte_sequence[2]) {
+                buf[i + cursor] = self.payload_size[i]
+            }
+            cursor = cursor + byte_sequence[2];
+            for i in 0..(byte_sequence[3]) {
+                buf[i + cursor] = self.checksum[i]
+            }
         }
-        cursor = byte_sequence[0];
-        for i in 0..(byte_sequence[1]) {
-            buf[i + cursor] = self.command_name[i]
-        }
-        cursor = cursor + byte_sequence[1];
-        for i in 0..(byte_sequence[2]) {
-            buf[i + cursor] = self.payload_size[i]
-        }
-        cursor = cursor + byte_sequence[2];
-        for i in 0..(byte_sequence[3]) {
-            buf[i + cursor] = self.checksum[i]
-        }
+
         Ok(buf)
     }
 }

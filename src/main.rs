@@ -15,12 +15,12 @@ use alloc::{
 use futures::future::select_all;
 
 use tokio::{
-    io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader},
+    io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
     net::{
         lookup_host, 
         TcpStream
     },
-    time::timeout,
+    // time::timeout,
 };
 use p2p_handshake::{
     errors,
