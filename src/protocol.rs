@@ -9,6 +9,7 @@ use sha2::{Digest, Sha256};
 use crate::{
     errors,
     payload,
+    traits::endian::EndianWrite,
 };
 
 pub const COMMAND_SIZE: usize = 24;
@@ -24,8 +25,9 @@ pub enum StartString {
     Testnet,
 }
 
-impl StartString {
-    pub fn le_value(&self) -> [u8; 4] {
+impl EndianWrite for StartString {
+    type Array = [u8;4];
+    fn to_le_bytes(&self) -> Self::Array {
         match self {
             StartString::Mainnet => {
                 [0xf9, 0xbe, 0xb4, 0xd9] // Little endian
@@ -37,7 +39,7 @@ impl StartString {
             }
         }
     }
-    pub fn be_value(&self) -> [u8; 4] {
+    fn to_be_bytes(&self) -> Self::Array {
         match self {
             StartString::Mainnet => {
                 // [0xf9, 0xbe, 0xb4, 0xd9] // Little endian
@@ -57,14 +59,15 @@ pub enum Command {
     Verack
 }
 
-impl Command {
-    pub fn to_le_bytes(&self) -> [u8;COMMAND_NAME_SIZE] {
+impl EndianWrite for Command {
+    type Array = [u8;COMMAND_NAME_SIZE];
+    fn to_le_bytes(&self) -> Self::Array {
         let mut res = [0_u8;COMMAND_NAME_SIZE];
         let big_endian = self.to_be_bytes();
         res.copy_from_slice(&big_endian.into_iter().rev().collect::<Vec<u8>>()); // write as little endian
         res
     }
-    pub fn to_be_bytes(&self) -> [u8;COMMAND_NAME_SIZE] {
+    fn to_be_bytes(&self) -> Self::Array {
         let mut command = [0_u8; COMMAND_NAME_SIZE];
         let command_name_bytes: Vec<_> = self.to_string().into_bytes();
         let command_bytes_len = command_name_bytes.len();
@@ -104,7 +107,7 @@ impl MessageHeader {
         let payload_size = u32_to_le_bytes(nonce.len().try_into()?);
         let checksum = le_checksum(&nonce);
         Ok(Self {
-            start_string: NETWORK.le_value(),
+            start_string: NETWORK.to_le_bytes(),
             command_name: Command::Ping(nonce).to_le_bytes(),
             payload_size,
             checksum,
@@ -112,7 +115,7 @@ impl MessageHeader {
     }
     pub fn verack() -> Result<Self, Box<dyn errors::Error>> {
         Ok(Self {
-            start_string: NETWORK.le_value(),
+            start_string: NETWORK.to_le_bytes(),
             command_name: Command::Verack.to_le_bytes(),
             payload_size: [0x00, 0x00, 0x00, 0x00],
             // checksum: [0x5d, 0xf6, 0xe0, 0xe2] // Empty checksum 0x5df6e0e2 big-endian
@@ -148,8 +151,6 @@ impl MessageHeader {
         self.checksum = le_checksum(payload);
         let mut buf = [0;COMMAND_SIZE];
         let mut cursor: usize = 0;
-        // buf.write_all(self.start_string);
-        // buf.append(self.command_name);
         let byte_sequence = [START_STRING_SIZE, COMMAND_NAME_SIZE, PAYLOAD_SIZE_SIZE, CHECKSUM_SIZE];
         for i in 0..byte_sequence[0] {
             buf[i] = self.start_string[i]
@@ -166,10 +167,6 @@ impl MessageHeader {
         for i in 0..(byte_sequence[3]) {
             buf[i + cursor] = self.checksum[i]
         }
-        // cursor = cursor + payload_size;
-        // for i in cursor..(START_STRING_SIZE + COMMAND_NAME_SIZE + PAYLOAD_SIZE_SIZE + CHECKSUM_SIZE + payload_size) {
-        //     buf[i] = payload[i]
-        // }
         Ok(buf)
     }
 }

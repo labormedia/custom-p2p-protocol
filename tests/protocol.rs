@@ -1,4 +1,5 @@
 use p2p_handshake::protocol;
+use p2p_handshake::traits::endian::EndianWrite;
 
 #[test]
 fn check_command_size() {
