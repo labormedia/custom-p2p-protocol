@@ -24,7 +24,8 @@ use tokio::{
 };
 use p2p_handshake::{
     errors,
-    protocol,
+    MessageHeader,
+    COMMAND_SIZE,
 };
 
 #[tokio::main]
@@ -59,10 +60,10 @@ async fn stream_process(target: SocketAddr) -> Result<Vec<u8>, Box<dyn errors::E
     println!("Resolving for {:?}", target);
     let mut stream = TcpStream::connect(target).await?;
     let payload: [u8; 8] = [1,1,1,1,1,1,1,1];
-    let ping_header = protocol::MessageHeader::ping()?.to_bytes_with_payload(&payload)?;
+    let ping_header = MessageHeader::ping()?.to_bytes_with_payload(&payload)?;
     let mut ping_header_with_payload = [0_u8; 32];
-    ping_header_with_payload[..protocol::COMMAND_SIZE].copy_from_slice(&ping_header);
-    ping_header_with_payload[protocol::COMMAND_SIZE..].copy_from_slice(&payload);
+    ping_header_with_payload[..COMMAND_SIZE].copy_from_slice(&ping_header);
+    ping_header_with_payload[COMMAND_SIZE..].copy_from_slice(&payload);
     #[cfg(debug_assertions)]
     println!("Bytes to send {:?}", ping_header_with_payload);
     let _ = stream.write_all(&ping_header_with_payload).await?;

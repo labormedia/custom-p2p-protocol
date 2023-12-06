@@ -1,16 +1,23 @@
-use p2p_handshake::protocol;
-use p2p_handshake::traits::endian::EndianWrite;
+use p2p_handshake::{
+    EndianWrite,
+    Command,
+    START_STRING_SIZE,
+    COMMAND_NAME_SIZE,
+    PAYLOAD_SIZE_SIZE,
+    CHECKSUM_SIZE,
+    COMMAND_SIZE,
+};
 
 #[test]
 fn check_command_size() {
-    let total_size = protocol::START_STRING_SIZE + protocol::COMMAND_NAME_SIZE + protocol::PAYLOAD_SIZE_SIZE + protocol::CHECKSUM_SIZE;
-    assert_eq!(total_size, protocol::COMMAND_SIZE)
+    let total_size = START_STRING_SIZE + COMMAND_NAME_SIZE + PAYLOAD_SIZE_SIZE + CHECKSUM_SIZE;
+    assert_eq!(total_size, COMMAND_SIZE)
 }
 
 #[test]
 fn ping_command_size() {
     let nonce = [0,0,1,0,0,1,0,0];
-    let command_bytes = protocol::Command::Ping(nonce).to_le_bytes();
+    let command_bytes = Command::Ping(nonce).to_le_bytes();
     assert_eq!(command_bytes.len(), 12);
 }
 
@@ -19,7 +26,7 @@ fn ping_command_size() {
 fn command_polymorphism_negative() {
     let nonce = [0,1,0,0,0,0,0,0];
     let a: [u8; 12] = 
-        protocol::Command::Ping(nonce)
+        Command::Ping(nonce)
             .to_le_bytes()
             .into_iter()
             // .rev()
@@ -27,7 +34,7 @@ fn command_polymorphism_negative() {
             .try_into()
             .unwrap();
     assert_eq!(
-        protocol::Command::Ping(nonce)
+        Command::Ping(nonce)
             .to_be_bytes(), 
         a
     );
@@ -37,7 +44,7 @@ fn command_polymorphism_negative() {
 fn command_polymorphism_positive() {
     let nonce = [0,1,0,0,0,0,0,0];
     let a: [u8; 12] = 
-        protocol::Command::Ping(nonce)
+        Command::Ping(nonce)
             .to_le_bytes()
             .into_iter()
             .rev()
@@ -45,7 +52,7 @@ fn command_polymorphism_positive() {
             .try_into()
             .unwrap();
     assert_eq!(
-        protocol::Command::Ping(nonce)
+        Command::Ping(nonce)
             .to_be_bytes(), 
         a
     );
