@@ -15,9 +15,10 @@ fn ping_command_size() {
 
 #[test]
 #[should_panic]
-fn command_poly_negative() {
+fn command_polymorphism_negative() {
+    let nonce = [0,1,0,0,0,0,0,0];
     let a: [u8; 12] = 
-        protocol::Command::Ping([0,0,0,0,0,0,0,0])
+        protocol::Command::Ping(nonce)
             .to_le_bytes()
             .into_iter()
             // .rev()
@@ -25,16 +26,17 @@ fn command_poly_negative() {
             .try_into()
             .unwrap();
     assert_eq!(
-        protocol::Command::Ping([0,0,0,0,0,0,0,0])
+        protocol::Command::Ping(nonce)
             .to_be_bytes(), 
         a
     );
 }
 
 #[test]
-fn command_poly_positive() {
+fn command_polymorphism_positive() {
+    let nonce = [0,1,0,0,0,0,0,0];
     let a: [u8; 12] = 
-        protocol::Command::Ping([0,0,0,0,0,0,0,0])
+        protocol::Command::Ping(nonce)
             .to_le_bytes()
             .into_iter()
             .rev()
@@ -42,7 +44,7 @@ fn command_poly_positive() {
             .try_into()
             .unwrap();
     assert_eq!(
-        protocol::Command::Ping([0,0,0,0,0,0,0,0])
+        protocol::Command::Ping(nonce)
             .to_be_bytes(), 
         a
     );
