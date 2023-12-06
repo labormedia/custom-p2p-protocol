@@ -4,11 +4,14 @@ use core::{
         Display,
     },
 };
-use crate::payload;
+use crate::payload::{
+    VersionPayload,
+    PingPayload,
+};
 
 pub enum Command {
-    Version(payload::Version),
-    Ping([u8; 8]),
+    Version(VersionPayload),
+    Ping(PingPayload),
     Verack
 }
 

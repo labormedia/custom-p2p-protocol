@@ -5,6 +5,10 @@ pub mod command;
 
 pub use command::Command;
 pub use traits::endian::EndianWrite;
+pub use payload::{
+    VersionPayload,
+    PingPayload,
+};
 use sha2::{Digest, Sha256};
 
 pub enum StartString {
@@ -86,12 +90,12 @@ pub struct MessageHeader {
 
 impl MessageHeader {
     pub fn ping() -> Result<Self, Box<dyn errors::Error>> {
-        let nonce: [u8; 8] = [0,0,0,0,0,0,0,0];
-        let payload_size = u32_to_le_bytes(nonce.len().try_into()?);
-        let checksum = le_checksum(&nonce);
+        let ping_payload: PingPayload = Default::default();
+        let payload_size = u32_to_le_bytes(ping_payload.nonce.len().try_into()?);
+        let checksum = le_checksum(&ping_payload.nonce);
         Ok(Self {
             start_string: NETWORK.to_le_bytes(),
-            command_name: Command::Ping(nonce).to_le_bytes(),
+            command_name: Command::Ping(ping_payload).to_le_bytes(),
             payload_size,
             checksum,
         })

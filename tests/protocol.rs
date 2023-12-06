@@ -6,6 +6,9 @@ use p2p_handshake::{
     PAYLOAD_SIZE_SIZE,
     CHECKSUM_SIZE,
     COMMAND_SIZE,
+    payload::{
+        PingPayload
+    },
 };
 
 #[test]
@@ -15,18 +18,20 @@ fn check_command_size() {
 }
 
 #[test]
-fn ping_command_size() {
-    let nonce = [0,0,1,0,0,1,0,0];
-    let command_bytes = Command::Ping(nonce).to_le_bytes();
+fn default_ping_command_size() {
+    let ping_payload: PingPayload = Default::default();
+    let command_bytes = Command::Ping(ping_payload).to_le_bytes();
     assert_eq!(command_bytes.len(), 12);
 }
 
 #[test]
 #[should_panic]
 fn command_polymorphism_negative() {
-    let nonce = [0,1,0,0,0,0,0,0];
+    let ping_payload = PingPayload {
+        nonce: [0,1,0,0,0,0,0,0]
+    };
     let a: [u8; 12] = 
-        Command::Ping(nonce)
+        Command::Ping(ping_payload.clone())
             .to_le_bytes()
             .into_iter()
             // .rev()
@@ -34,7 +39,7 @@ fn command_polymorphism_negative() {
             .try_into()
             .unwrap();
     assert_eq!(
-        Command::Ping(nonce)
+        Command::Ping(ping_payload)
             .to_be_bytes(), 
         a
     );
@@ -42,9 +47,11 @@ fn command_polymorphism_negative() {
 
 #[test]
 fn command_polymorphism_positive() {
-    let nonce = [0,1,0,0,0,0,0,0];
+    let ping_payload = PingPayload {
+        nonce: [0,1,0,0,0,0,0,0]
+    };
     let a: [u8; 12] = 
-        Command::Ping(nonce)
+        Command::Ping(ping_payload.clone())
             .to_le_bytes()
             .into_iter()
             .rev()
@@ -52,7 +59,7 @@ fn command_polymorphism_positive() {
             .try_into()
             .unwrap();
     assert_eq!(
-        Command::Ping(nonce)
+        Command::Ping(ping_payload)
             .to_be_bytes(), 
         a
     );
