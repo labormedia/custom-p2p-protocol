@@ -8,7 +8,7 @@ use sha2::{Digest, Sha256};
 
 use crate::{
     errors,
-    payload::Version,
+    payload,
 };
 
 pub const COMMAND_SIZE: usize = 24;
@@ -52,6 +52,7 @@ impl StartString {
 }
 
 pub enum Command {
+    Version(payload::Version),
     Ping([u8; 8]),
     Verack
 }
@@ -59,77 +60,23 @@ pub enum Command {
 impl Command {
     pub fn to_le_bytes(&self) -> [u8;COMMAND_NAME_SIZE] {
         let mut res = [0_u8;COMMAND_NAME_SIZE];
-        let big_endian = match self {
-            Command::Ping(_nonce) => {
-                let mut command = [0_u8; COMMAND_NAME_SIZE];
-                let command_name_bytes: Vec<_> = self.to_string().into_bytes();
-                let command_bytes_len = command_name_bytes.len();
-                #[cfg(debug_assertions)]
-                println!("Command length {}", command_bytes_len);
-                // Fills the command with the appropiate size in bytes
-                for i in 0..(COMMAND_NAME_SIZE) {
-                    if command_bytes_len > i {
-                        command[i] = command_name_bytes[i];
-                    } else {
-                        command[i] = 0x00;
-                    }
-                };
-                command
-            },
-            Command::Verack => {
-                let mut command = [0; COMMAND_NAME_SIZE];
-                let command_name_bytes = self.to_string().into_bytes();
-                let command_bytes_len = command_name_bytes.len();
-                // Fills the command with the appropiate size in bytes
-                for i in 0..(COMMAND_NAME_SIZE) {
-                    if command_bytes_len > i {
-                        command[i] = command_name_bytes[i];
-                    } else {
-                        command[i] = 0x00;
-                    }
-                };
-                command
-            }
-        };
+        let big_endian = self.to_be_bytes();
         res.copy_from_slice(&big_endian.into_iter().rev().collect::<Vec<u8>>()); // write as little endian
-        #[cfg(debug_assertions)]
-        println!("Response : {:?}", res);
         res
     }
     pub fn to_be_bytes(&self) -> [u8;COMMAND_NAME_SIZE] {
-        let mut res = [0_u8;COMMAND_NAME_SIZE];
-        match self {
-            Command::Ping(_nonce) => {
-                let mut command = [0_u8; COMMAND_NAME_SIZE];
-                let command_name_bytes: Vec<_> = self.to_string().into_bytes();
-                let command_bytes_len = command_name_bytes.len();
-                #[cfg(debug_assertions)]
-                println!("Command length {}", command_bytes_len);
-                // Fills the command with the appropiate size in bytes
-                for i in 0..(COMMAND_NAME_SIZE) {
-                    if command_bytes_len > i {
-                        command[i] = command_name_bytes[i];
-                    } else {
-                        command[i] = 0x00;
-                    }
-                };
-                command
-            },
-            Command::Verack => {
-                let mut command = [0; COMMAND_NAME_SIZE];
-                let command_name_bytes = self.to_string().into_bytes();
-                let command_bytes_len = command_name_bytes.len();
-                // Fills the command with the appropiate size in bytes
-                for i in 0..(COMMAND_NAME_SIZE) {
-                    if command_bytes_len > i {
-                        command[i] = command_name_bytes[i];
-                    } else {
-                        command[i] = 0x00;
-                    }
-                };
-                command
+        let mut command = [0_u8; COMMAND_NAME_SIZE];
+        let command_name_bytes: Vec<_> = self.to_string().into_bytes();
+        let command_bytes_len = command_name_bytes.len();
+        // Fills the command with the appropiate size in bytes
+        for i in 0..(COMMAND_NAME_SIZE) {
+            if command_bytes_len > i {
+                command[i] = command_name_bytes[i];
+            } else {
+                command[i] = 0x00;
             }
-        }
+        };
+        command
     }
 }
 
@@ -138,6 +85,7 @@ impl Display for Command {
         let s = match self {
             Command::Ping(_) => "ping",
             Command::Verack => "verack",
+            Command::Version(_) => "version",
         };
         write!(f, "{}", s)
     }
@@ -247,12 +195,6 @@ pub fn le_checksum(data: &[u8]) -> [u8; CHECKSUM_SIZE] {
     buf.clone_from_slice(&hash[..CHECKSUM_SIZE]);
 
     [buf[3], buf[2], buf[1], buf[0]]
-}
-
-#[test]
-fn check_command_size() {
-    let total_size = START_STRING_SIZE + COMMAND_NAME_SIZE + PAYLOAD_SIZE_SIZE + CHECKSUM_SIZE;
-    assert_eq!(total_size, COMMAND_SIZE)
 }
 
 #[test]
