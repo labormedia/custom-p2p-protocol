@@ -28,7 +28,7 @@ fn default_ping_command_size() {
 #[should_panic]
 fn command_polymorphism_negative() {
     let ping_payload = PingPayload {
-        nonce: [0,1,0,0,0,0,0,0]
+        nonce: [0,1,0,0,0,0,0,0] // non palindromic
     };
     let a: [u8; 12] = 
         Command::Ping(ping_payload.clone())
@@ -48,7 +48,7 @@ fn command_polymorphism_negative() {
 #[test]
 fn command_polymorphism_positive() {
     let ping_payload = PingPayload {
-        nonce: [0,1,0,0,0,0,0,0]
+        nonce: [0,1,0,0,0,0,0,0] // non palindromic
     };
     let a: [u8; 12] = 
         Command::Ping(ping_payload.clone())
