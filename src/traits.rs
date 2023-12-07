@@ -1,11 +1,11 @@
 pub trait EndianWrite {
-    type Array;
-    fn to_le_bytes(&self) -> Self::Array;
-    fn to_be_bytes(&self) -> Self::Array;
+    type Output;
+    fn to_le_bytes(&self) -> Self::Output;
+    fn to_be_bytes(&self) -> Self::Output;
 }
 
 pub trait EndianRead {
-    type Array;
-    fn from_le_bytes(array: Self::Array) -> Self;
-    fn from_be_bytes(array: Self::Array) -> Self;
+    type Output;
+    fn from_le_bytes(Output: Self::Output) -> Self;
+    fn from_be_bytes(Output: Self::Output) -> Self;
 }

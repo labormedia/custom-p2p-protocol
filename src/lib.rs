@@ -24,14 +24,14 @@ pub const MAX_PAYLOAD_SIZE: usize = 32 * 1024 * 1024;
 pub const NETWORK: Network = Network::Mainnet;
 
 impl EndianWrite for Command {
-    type Array = [u8;COMMAND_NAME_SIZE];
-    fn to_le_bytes(&self) -> Self::Array {
+    type Output = [u8;COMMAND_NAME_SIZE];
+    fn to_le_bytes(&self) -> Self::Output {
         let mut res = [0_u8;COMMAND_NAME_SIZE];
         let big_endian = self.to_be_bytes();
         res.copy_from_slice(&big_endian.into_iter().rev().collect::<Vec<u8>>()); // write as little endian
         res
     }
-    fn to_be_bytes(&self) -> Self::Array {
+    fn to_be_bytes(&self) -> Self::Output {
         let mut command = [0_u8; COMMAND_NAME_SIZE];
         let command_name_bytes: Vec<_> = self.to_string().into_bytes();
         let command_bytes_len = command_name_bytes.len();
@@ -52,6 +52,58 @@ pub struct MessageHeader {
     command_name: [u8;COMMAND_NAME_SIZE],
     payload_size: [u8;PAYLOAD_SIZE_SIZE],
     checksum: [u8;CHECKSUM_SIZE],
+}
+
+impl EndianWrite for MessageHeader {
+    type Output = [u8; COMMAND_SIZE];
+    fn to_be_bytes(&self) -> Self::Output {
+        let mut buf = [0;COMMAND_SIZE];
+        let byte_sequence = [START_STRING_SIZE, COMMAND_NAME_SIZE, PAYLOAD_SIZE_SIZE, CHECKSUM_SIZE];        
+        { // serialization rutine
+            let mut cursor: usize = 0;
+            for i in 0..byte_sequence[0] {
+                buf[i + cursor] = self.start_string[i]
+            }
+            cursor = byte_sequence[0];
+            for i in 0..(byte_sequence[1]) {
+                buf[i + cursor] = self.command_name[i]
+            }
+            cursor = cursor + byte_sequence[1];
+            for i in 0..(byte_sequence[2]) {
+                buf[i + cursor] = self.payload_size[i]
+            }
+            cursor = cursor + byte_sequence[2];
+            for i in 0..(byte_sequence[3]) {
+                buf[i + cursor] = self.checksum[i]
+            }
+        }
+
+        buf
+    }
+    fn to_le_bytes(&self) -> Self::Output {
+        let mut buf = [0;COMMAND_SIZE];
+        let byte_sequence = [START_STRING_SIZE, COMMAND_NAME_SIZE, PAYLOAD_SIZE_SIZE, CHECKSUM_SIZE];        
+        { // serialization rutine
+            let mut cursor: usize = 0;
+            for i in 0..byte_sequence[0] {
+                buf[i + cursor] = self.start_string[i]
+            }
+            cursor = byte_sequence[0];
+            for i in 0..(byte_sequence[1]) {
+                buf[i + cursor] = self.command_name[i]
+            }
+            cursor = cursor + byte_sequence[1];
+            for i in 0..(byte_sequence[2]) {
+                buf[i + cursor] = self.payload_size[i]
+            }
+            cursor = cursor + byte_sequence[2];
+            for i in 0..(byte_sequence[3]) {
+                buf[i + cursor] = self.checksum[i]
+            }
+        }
+        buf.reverse();
+        buf
+    }
 }
 
 impl MessageHeader {
@@ -75,37 +127,13 @@ impl MessageHeader {
             checksum: [0xe2, 0xe0, 0xf6, 0x5d] // Empty checksum 0x5df6e0e2 little-endian
         })
     }
-    pub fn to_bytes(&self) -> Result<[u8;COMMAND_SIZE], Box<dyn errors::Error>> {
-        let mut buf = [0;COMMAND_SIZE];
-        let byte_sequence = [START_STRING_SIZE, COMMAND_NAME_SIZE, PAYLOAD_SIZE_SIZE, CHECKSUM_SIZE];        
-        { // serialization rutine
-            let mut cursor: usize = 0;
-            for i in 0..byte_sequence[0] {
-                buf[i + cursor] = self.start_string[i]
-            }
-            cursor = byte_sequence[0];
-            for i in 0..(byte_sequence[1]) {
-                buf[i + cursor] = self.command_name[i]
-            }
-            cursor = cursor + byte_sequence[1];
-            for i in 0..(byte_sequence[2]) {
-                buf[i + cursor] = self.payload_size[i]
-            }
-            cursor = cursor + byte_sequence[2];
-            for i in 0..(byte_sequence[3]) {
-                buf[i + cursor] = self.checksum[i]
-            }
-        }
-
-        Ok(buf)
-    }
-    pub fn to_bytes_with_payload(&mut self, payload: &[u8]) -> Result<[u8;COMMAND_SIZE], Box<dyn errors::Error>> {
+    pub fn to_le_bytes_with_payload(&mut self, payload: &[u8]) -> Result<[u8;COMMAND_SIZE], Box<dyn errors::Error>> {
         if u32_to_le_bytes(payload.len().try_into()?) != self.payload_size {
             return Err(Box::new(errors::ErrorSide::PayloadSizeMismatch(Box::new(self.payload_size))))
         } else {
             self.payload_size = u32_to_le_bytes(payload.len().try_into()?); // repeats the complete rutine
             self.checksum = le_checksum(payload);
-            self.to_bytes()
+            Ok(self.to_le_bytes())
         }
     }
 }
