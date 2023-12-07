@@ -21,9 +21,9 @@ impl EndianWrite for Network {
         }
     }
     fn to_be_bytes(&self) -> Self::Output {
-        let mut reversed = self.to_le_bytes().clone();
-        reversed.reverse();
-        reversed
+        let mut buf = self.to_le_bytes().clone();
+        buf.reverse();
+        buf
     }
 }
 
