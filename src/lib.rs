@@ -77,35 +77,7 @@ impl MessageHeader {
     }
     pub fn to_bytes(&self) -> Result<[u8;COMMAND_SIZE], Box<dyn errors::Error>> {
         let mut buf = [0;COMMAND_SIZE];
-        let mut cursor: usize = 0;
-        for i in cursor..START_STRING_SIZE {
-            buf[i] = self.start_string[i]
-        }
-        cursor = cursor + START_STRING_SIZE;
-        for i in cursor..COMMAND_NAME_SIZE {
-            buf[i] = self.command_name[i]
-        }
-        cursor = cursor + COMMAND_NAME_SIZE;
-        for i in cursor..PAYLOAD_SIZE_SIZE {
-            buf[i] = self.payload_size[i]
-        }
-        cursor = cursor + PAYLOAD_SIZE_SIZE;
-        for i in cursor..CHECKSUM_SIZE {
-            buf[i] = self.checksum[i]
-        }
-        Ok(buf)
-    }
-    pub fn to_bytes_with_payload(&mut self, payload: &[u8]) -> Result<[u8;COMMAND_SIZE], Box<dyn errors::Error>> {
-        if u32_to_le_bytes(payload.len().try_into()?) != self.payload_size {
-            return Err(Box::new(errors::ErrorSide::PayloadSizeMismatch(Box::new(self.payload_size))))
-        };
-        let payload_size = payload.len();
-        self.payload_size = u32_to_le_bytes(payload_size.try_into()?); // repeats the complete rutine
-        self.checksum = le_checksum(payload);
-        let mut buf = [0;COMMAND_SIZE];
-        let byte_sequence = [START_STRING_SIZE, COMMAND_NAME_SIZE, PAYLOAD_SIZE_SIZE, CHECKSUM_SIZE];
-
-        
+        let byte_sequence = [START_STRING_SIZE, COMMAND_NAME_SIZE, PAYLOAD_SIZE_SIZE, CHECKSUM_SIZE];        
         { // serialization rutine
             let mut cursor: usize = 0;
             for i in 0..byte_sequence[0] {
@@ -126,6 +98,15 @@ impl MessageHeader {
         }
 
         Ok(buf)
+    }
+    pub fn to_bytes_with_payload(&mut self, payload: &[u8]) -> Result<[u8;COMMAND_SIZE], Box<dyn errors::Error>> {
+        if u32_to_le_bytes(payload.len().try_into()?) != self.payload_size {
+            return Err(Box::new(errors::ErrorSide::PayloadSizeMismatch(Box::new(self.payload_size))))
+        } else {
+            self.payload_size = u32_to_le_bytes(payload.len().try_into()?); // repeats the complete rutine
+            self.checksum = le_checksum(payload);
+            self.to_bytes()
+        }
     }
 }
 
