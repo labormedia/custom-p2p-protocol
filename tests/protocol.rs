@@ -64,3 +64,44 @@ fn command_polymorphism_positive() {
         a
     );
 }
+
+#[test]
+#[should_panic]
+fn ping_message_header_polymorphism_negative() {
+    let ping_payload = PingPayload {
+        nonce: [0,1,0,0,0,0,0,0] // non palidromic
+    };
+    let a: [u8; 12] = 
+        Command::Ping(ping_payload.clone())
+            .to_le_bytes()
+            .into_iter()
+            // .rev()
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap();
+    assert_eq!(
+        Command::Ping(ping_payload)
+            .to_be_bytes(), 
+        a
+    );
+}
+
+#[test]
+fn ping_message_header_polymorphism_positive() {
+    let ping_payload = PingPayload {
+        nonce: [0,1,0,0,0,0,0,0] // non palindromic
+    };
+    let a: [u8; 12] = 
+        Command::Ping(ping_payload.clone())
+            .to_le_bytes()
+            .into_iter()
+            .rev()
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap();
+    assert_eq!(
+        Command::Ping(ping_payload)
+            .to_be_bytes(), 
+        a
+    );
+}

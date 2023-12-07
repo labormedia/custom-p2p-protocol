@@ -81,26 +81,7 @@ impl EndianWrite for MessageHeader {
         buf
     }
     fn to_le_bytes(&self) -> Self::Output {
-        let mut buf = [0;COMMAND_SIZE];
-        let byte_sequence = [START_STRING_SIZE, COMMAND_NAME_SIZE, PAYLOAD_SIZE_SIZE, CHECKSUM_SIZE];        
-        { // serialization rutine
-            let mut cursor: usize = 0;
-            for i in 0..byte_sequence[0] {
-                buf[i + cursor] = self.start_string[i]
-            }
-            cursor = byte_sequence[0];
-            for i in 0..(byte_sequence[1]) {
-                buf[i + cursor] = self.command_name[i]
-            }
-            cursor = cursor + byte_sequence[1];
-            for i in 0..(byte_sequence[2]) {
-                buf[i + cursor] = self.payload_size[i]
-            }
-            cursor = cursor + byte_sequence[2];
-            for i in 0..(byte_sequence[3]) {
-                buf[i + cursor] = self.checksum[i]
-            }
-        }
+        let mut buf = self.to_be_bytes();
         buf.reverse();
         buf
     }
@@ -165,4 +146,11 @@ pub fn le_checksum(data: &[u8]) -> [u8; CHECKSUM_SIZE] {
 fn check_u32_to_le_bytes_endianess() {
     let num: u32 = 42;
     assert_eq!(u32_to_le_bytes(num.try_into().unwrap()), num.to_le_bytes());
+}
+
+#[test]
+fn empty_checksum() {
+    let mut empty_checksum = le_checksum(&[]);
+    empty_checksum.reverse();
+    assert_eq!(empty_checksum, [0x5d, 0xf6, 0xe0, 0xe2]) // 0x5df6e0e2
 }
