@@ -156,6 +156,20 @@ pub fn le_checksum(data: &[u8]) -> [u8; CHECKSUM_SIZE] {
     [buf[3], buf[2], buf[1], buf[0]]
 }
 
+pub fn to_bytes_from_slice(str_slice: &String) -> Vec<u8> {
+    (0..str_slice.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&str_slice[i..i + 2], 16).unwrap() )
+        .collect()
+}
+
+pub fn to_hex_string(data: &[u8]) -> String {
+    data.iter()
+        .map(|b| format!("{:02x}", b).to_string())
+        .collect::<Vec<String>>()
+        .join("")
+}
+
 #[test]
 fn check_u32_to_le_bytes_endianess() {
     let num: u32 = 42;
@@ -177,19 +191,14 @@ fn block_125552() { // https://blockchair.com/bitcoin/block/125552
         "c7f5d74d" +
         "f2b9441a" +
         "42a14695";
-    let header_bytes: Vec<u8> = (0..binding.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&binding[i..i + 2], 16).unwrap() )
-        .collect();
+    let header_bytes: Vec<u8> = to_bytes_from_slice(&binding);
     let binding_as_bytes: &[u8] = binding.as_bytes();
+    assert_eq!(binding_as_bytes.len(), 160);
     assert_eq!(header_bytes.len(), 80);
 
     let long_hash = long_checksum(&header_bytes);
     assert_eq!(long_hash.len(), 32);
 
-    let hex : String = long_hash.iter()
-        .map(|b| format!("{:02x}", b).to_string())
-        .collect::<Vec<String>>()
-        .join("");
+    let hex : String = to_hex_string(&long_hash);
     assert_eq!(hex, "00000000000000001e8d6829a8a21adc5d38d0a473b144b6765798e61f98bd1d");
 }
