@@ -21,7 +21,7 @@ fn check_command_size() {
 fn default_ping_command_size() {
     let ping_payload: PingPayload = Default::default();
     let command_bytes = Command::Ping(ping_payload).to_le_bytes();
-    assert_eq!(command_bytes.len(), 12);
+    assert_eq!(command_bytes.len(), COMMAND_NAME_SIZE);
 }
 
 #[test]
