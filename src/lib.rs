@@ -127,6 +127,20 @@ fn u32_to_le_bytes(size: u32) -> [u8; 4] {
     return [b4, b3, b2, b1]  // Little Endianess
 }
 
+pub fn long_checksum(data: &[u8]) -> Vec<u8> {
+    let mut hasher = Sha256::new();
+    hasher.update(data);
+    let hash = hasher.finalize();
+
+    let mut hasher = Sha256::new();
+    hasher.update(hash);
+    let hash = hasher.finalize();
+
+    let mut hash_vector = hash.to_vec();
+    hash_vector.reverse();
+    hash_vector
+}
+
 pub fn le_checksum(data: &[u8]) -> [u8; CHECKSUM_SIZE] {
     let mut hasher = Sha256::new();
     hasher.update(data);
@@ -153,4 +167,29 @@ fn empty_checksum() {
     let mut empty_checksum = le_checksum(&[]);
     empty_checksum.reverse();
     assert_eq!(empty_checksum, [0x5d, 0xf6, 0xe0, 0xe2]) // 0x5df6e0e2
+}
+
+#[test]
+fn block_125552() { // https://blockchair.com/bitcoin/block/125552
+    let binding = "01000000".to_owned() +
+        "81cd02ab7e569e8bcd9317e2fe99f2de44d49ab2b8851ba4a308000000000000" +
+        "e320b6c2fffc8d750423db8b1eb942ae710e951ed797f7affc8892b0f1fc122b" +
+        "c7f5d74d" +
+        "f2b9441a" +
+        "42a14695";
+    let header_bytes: Vec<u8> = (0..binding.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&binding[i..i + 2], 16).unwrap() )
+        .collect();
+    let binding_as_bytes: &[u8] = binding.as_bytes();
+    assert_eq!(header_bytes.len(), 80);
+
+    let long_hash = long_checksum(&header_bytes);
+    assert_eq!(long_hash.len(), 32);
+
+    let hex : String = long_hash.iter()
+        .map(|b| format!("{:02x}", b).to_string())
+        .collect::<Vec<String>>()
+        .join("");
+    assert_eq!(hex, "00000000000000001e8d6829a8a21adc5d38d0a473b144b6765798e61f98bd1d");
 }

@@ -6,6 +6,6 @@ pub trait EndianWrite {
 
 pub trait EndianRead {
     type Input;
-    fn from_le_bytes(Output: Self::Input) -> Self;
-    fn from_be_bytes(Output: Self::Input) -> Self;
+    fn from_le_bytes(input: Self::Input) -> Self;
+    fn from_be_bytes(input: Self::Input) -> Self;
 }
