@@ -21,17 +21,41 @@ impl EndianWrite for Network {
         }
     }
     fn to_be_bytes(&self) -> Self::Array {
-        match self {
-            Network::Mainnet => {
-                let mut reversed = self.to_le_bytes().clone();
-                reversed.reverse();
-                reversed
-            },
-            Network::Testnet => {
-                let mut reversed = self.to_le_bytes().clone();
-                reversed.reverse();
-                reversed
-            }
-        }
+        let mut reversed = self.to_le_bytes().clone();
+        reversed.reverse();
+        reversed
     }
+}
+
+#[test]
+#[should_panic]
+fn magic_bytes_polymorphism_negative() {
+    let a: [u8;4] = Network::Mainnet
+        .to_le_bytes()
+        .into_iter()
+        // .rev()
+        .collect::<Vec<_>>()
+        .try_into()
+        .unwrap();
+    assert_eq!(
+        Network::Mainnet
+            .to_be_bytes(), 
+        a
+    );
+}
+
+#[test]
+fn magic_bytes_polymorphism_positive() {
+    let a: [u8;4] = Network::Mainnet
+        .to_le_bytes()
+        .into_iter()
+        .rev()
+        .collect::<Vec<_>>()
+        .try_into()
+        .unwrap();
+    assert_eq!(
+        Network::Mainnet
+            .to_be_bytes(), 
+        a
+    );
 }
