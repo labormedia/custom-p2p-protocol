@@ -177,10 +177,17 @@ fn check_u32_to_le_bytes_endianess() {
 }
 
 #[test]
-fn empty_checksum() {
+fn empty_le_checksum() {
     let mut empty_checksum = le_checksum(&[]);
     empty_checksum.reverse();
     assert_eq!(empty_checksum, [0x5d, 0xf6, 0xe0, 0xe2]) // 0x5df6e0e2
+}
+
+#[test]
+fn empty_long_checksum() {
+    let mut empty_checksum = long_checksum(&[]);
+    empty_checksum.reverse();
+    assert_eq!(empty_checksum[0..4], [0x5d, 0xf6, 0xe0, 0xe2]) // 0x5df6e0e2
 }
 
 #[test]
