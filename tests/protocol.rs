@@ -7,8 +7,12 @@ use p2p_handshake::{
     CHECKSUM_SIZE,
     COMMAND_SIZE,
     payload::{
-        PingPayload
+        PingPayload,
+        VersionPayload,
     },
+    to_bytes_from_slice,
+    to_hex_string_from_slice,
+    long_checksum,
 };
 
 #[test]
@@ -104,4 +108,24 @@ fn ping_message_header_polymorphism_positive() {
             .to_be_bytes(), 
         a
     );
+}
+
+#[test]
+fn hard_coded_message() {
+    let binding = "01000000".to_owned() +
+        "81cd02ab7e569e8bcd9317e2fe99f2de44d49ab2b8851ba4a308000000000000" +
+        "e320b6c2fffc8d750423db8b1eb942ae710e951ed797f7affc8892b0f1fc122b" +
+        "c7f5d74d" +
+        "f2b9441a" +
+        "42a14695";
+    let header_bytes: Vec<u8> = to_bytes_from_slice(&binding);
+    let binding_as_bytes: &[u8] = binding.as_bytes();
+    assert_eq!(binding_as_bytes.len(), 160);
+    assert_eq!(header_bytes.len(), 80);
+
+    let long_hash = long_checksum(&header_bytes);
+    assert_eq!(long_hash.len(), 32);
+
+    let hex : String = to_hex_string_from_slice(&long_hash);
+    assert_eq!(hex, "00000000000000001e8d6829a8a21adc5d38d0a473b144b6765798e61f98bd1d");
 }

@@ -9,11 +9,12 @@ pub enum Network {
 
 }
 
-const MAINNET_LE: [u8;4] = [0xd9, 0xb4, 0xbe, 0xf9]; // as documented in https://en.bitcoin.it/wiki/Protocol_documentation#Common_structures
-const TESTNET3_LE: [u8;4] = [0x07, 0x09, 0x11, 0x0b]; // as documented in https://en.bitcoin.it/wiki/Protocol_documentation#Common_structures
-const REGTEST_LE: [u8; 4] = [0xda, 0xb5, 0xbf, 0xfa];
-const SIGNET_LE: [u8; 4] = [0x40, 0xcf, 0x03, 0x0a];
-const NAMECOIN_LE: [u8;4] = [0xfe, 0xb4, 0xbe, 0xf9];
+// as documented in https://en.bitcoin.it/wiki/Protocol_documentation#Common_structures
+const MAINNET: [u8;4] = [0xd9, 0xb4, 0xbe, 0xf9]; 
+const TESTNET3: [u8;4] = [0x07, 0x09, 0x11, 0x0b]; 
+const REGTEST: [u8; 4] = [0xda, 0xb5, 0xbf, 0xfa];
+const SIGNET: [u8; 4] = [0x40, 0xcf, 0x03, 0x0a];
+const NAMECOIN: [u8;4] = [0xfe, 0xb4, 0xbe, 0xf9];
 
 impl EndianWrite for Network {
     type Output = [u8;4];
@@ -25,19 +26,19 @@ impl EndianWrite for Network {
     fn to_be_bytes(&self) -> Self::Output {
         match self {
             Network::Mainnet => {
-                MAINNET_LE
+                MAINNET
             },
             Network::Testnet3 => {
-                TESTNET3_LE
+                TESTNET3
             },
             Network::Regtest => {
-                REGTEST_LE
+                REGTEST
             },
             Network::Signet => {
-                SIGNET_LE
+                SIGNET
             },
             Network::Namecoin => {
-                NAMECOIN_LE
+                NAMECOIN
             }
         }
     }
