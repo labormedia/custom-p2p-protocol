@@ -10,9 +10,9 @@ use p2p_handshake::{
         PingPayload,
         VersionPayload,
     },
-    to_bytes_from_slice,
-    to_hex_string_from_slice,
-    long_checksum,
+    helpers::to_bytes_from_slice,
+    helpers::to_hex_string_from_slice,
+    helpers::long_checksum,
 };
 
 #[test]
