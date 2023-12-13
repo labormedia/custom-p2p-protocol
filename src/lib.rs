@@ -4,6 +4,7 @@ pub mod traits;
 pub mod command;
 pub mod magic_bytes;
 pub mod helpers;
+pub mod network_address;
 
 pub use command::Command;
 pub use traits::EndianWrite;
@@ -123,7 +124,7 @@ impl MessageHeader {
         if helpers::u32_to_le_bytes(payload.len().try_into()?) != self.payload_size {
             return Err(Box::new(errors::ErrorSide::PayloadSizeMismatch(Box::new(self.payload_size))))
         } else {
-            self.payload_size = helpers::u32_to_le_bytes(payload.len().try_into()?); // repeats the complete rutine
+            self.payload_size = helpers::u32_to_le_bytes(payload.len().try_into()?);
             self.checksum = helpers::le_checksum(payload);
             Ok(self.to_le_bytes())
         }
