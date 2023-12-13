@@ -59,13 +59,14 @@ impl EndianWrite for MessageHeader {
     type Output = [u8; COMMAND_SIZE];
     fn to_be_bytes(&self) -> Self::Output {
         let mut buf = [0;COMMAND_SIZE];
-        let byte_sequence = [START_STRING_SIZE, COMMAND_NAME_SIZE, PAYLOAD_SIZE_SIZE, CHECKSUM_SIZE];        
-        for j in 0..4 { // serialization rutine
-            let mut cursor: usize = 0;
+        let byte_sequence = [START_STRING_SIZE, COMMAND_NAME_SIZE, PAYLOAD_SIZE_SIZE, CHECKSUM_SIZE];     
+          
+        { // serialization rutine
+            let mut cursor: usize = 0; 
             for i in 0..byte_sequence[0] {
                 buf[i + cursor] = self.start_string[i]
             }
-            cursor = byte_sequence[0];
+            cursor = cursor + byte_sequence[0];
             for i in 0..(byte_sequence[1]) {
                 buf[i + cursor] = self.command_name[i]
             }
