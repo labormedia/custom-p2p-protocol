@@ -93,9 +93,45 @@ impl Length for NetworkOptions {
 impl EndianWrite for NetworkOptions {
     type Output = Vec<u8>;
     fn to_le_bytes(&self) -> Self::Output {
-        Vec::new()
+        let mut options = self.to_be_bytes();
+        options.reverse();
+        options
     }
     fn to_be_bytes(&self) -> Self::Output {
+        let options: Vec<u8> = match self {
+            NetworkOptions::NetworkTime(option) => {
+                match option {
+                    None => Vec::new(),
+                    Some(serial_layout) => {
+                        (*serial_layout).to_vec()
+                    }
+                }
+            },
+            NetworkOptions::NetworkServices(option) => {
+                match option {
+                    None => Vec::new(),
+                    Some(serial_layout) => {
+                        (*serial_layout).to_vec()
+                    }
+                }
+            },
+            NetworkOptions::NetworkIpvXX(option) => {
+                match option {
+                    None => Vec::new(),
+                    Some(serial_layout) => {
+                        (*serial_layout).to_vec()
+                    }
+                }
+            },
+            NetworkOptions::NetworkPort(option) => {
+                match option {
+                    None => Vec::new(),
+                    Some(serial_layout) => {
+                        (*serial_layout).to_vec()
+                    }
+                }
+            },
+        };
         Vec::new()
     }
 }
@@ -138,11 +174,9 @@ impl EndianWrite for NetworkAddress {
             | Self::Version(options)  => {
                 options
                     .into_iter()
-                    .map(|x| {0} )
-                    // .map(|x| {*x.to_be_bytes()})
-                    // .sum::<Vec<u8>>()
+                    .map(|x| {x.to_be_bytes()} )  // TODO: check double endianess
+                    .flatten()
                     .collect::<Vec<u8>>()
-                    // .map( |x| { Box::new(x)})
             },
         };
         options
