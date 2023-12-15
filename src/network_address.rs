@@ -43,28 +43,60 @@ impl EndianWrite for IP {
     }
 }
 
+#[derive(Clone)]
 enum NetworkOptions {
     NetworkTime(Option<[u8;NETWORK_TIME]>),
-    NetworkServices(Option<[u8;NETWORK_TIME]>),
-    NetworkIpvXX(Option<[u8;NETWORK_TIME]>),
-    NetworkPort(Option<[u8;NETWORK_TIME]>),
+    NetworkServices(Option<[u8;NETWORK_SERVICES]>),
+    NetworkIpvXX(Option<[u8;NETWORK_IPvXX]>),
+    NetworkPort(Option<[u8;NETWORK_PORT]>),
 }
 
 impl Length for NetworkOptions {
     fn len(&self) -> usize {
         match self {
-            NetworkOptions::NetworkTime(option)
-            | NetworkOptions::NetworkServices(option)
-            | NetworkOptions::NetworkIpvXX(option)
-            | NetworkOptions::NetworkPort(option) => {
+            NetworkOptions::NetworkTime(option) => {
                 match option {
                     None => 0_usize,
                     Some(serial_layout) => {
                         serial_layout.len()
                     }
                 }
-            }
+            },
+            NetworkOptions::NetworkServices(option) => {
+                match option {
+                    None => 0_usize,
+                    Some(serial_layout) => {
+                        serial_layout.len()
+                    }
+                }
+            },
+            NetworkOptions::NetworkIpvXX(option) => {
+                match option {
+                    None => 0_usize,
+                    Some(serial_layout) => {
+                        serial_layout.len()
+                    }
+                }
+            },
+            NetworkOptions::NetworkPort(option) => {
+                match option {
+                    None => 0_usize,
+                    Some(serial_layout) => {
+                        serial_layout.len()
+                    }
+                }
+            },
         }
+    }
+}
+
+impl EndianWrite for NetworkOptions {
+    type Output = Vec<u8>;
+    fn to_le_bytes(&self) -> Self::Output {
+        Vec::new()
+    }
+    fn to_be_bytes(&self) -> Self::Output {
+        Vec::new()
     }
 }
 
@@ -72,63 +104,48 @@ impl Length for NetworkOptions {
 #[derive(Clone)]
 pub enum NetworkAddress { 
     NonVersion(
-        [u8;NETWORK_TIME], 
-        [u8;NETWORK_SERVICES], 
-        [u8;NETWORK_IPvXX], 
-        [u8;NETWORK_PORT]),
+        [NetworkOptions;4]
+    ),
     Version(
-        [u8;0],
-        [u8;NETWORK_SERVICES], 
-        [u8;NETWORK_IPvXX], 
-        [u8;NETWORK_PORT]),
+        [NetworkOptions;4]
+    ),
 }
 
 impl Length for NetworkAddress {
     fn len(&self) -> usize {
         match self {
-            Self::NonVersion(field0, field1, field2, field3) => {
-                field0.len()
-                + field1.len()
-                + field2.len()
-                + field3.len()
+            Self::NonVersion(options)
+            | Self::Version(options) => {
+                options
+                    .into_iter()
+                    .map(|x| {x.len()} )
+                    .sum::<usize>()
             },
-            // Both variant's code looks the same, but are being treated differently in type.
-            Self::Version(field0, field1, field2, field3) => {
-                field0.len()
-                + field1.len()
-                + field2.len()
-                + field3.len()
-           },
         }
     }
 }
 
 impl EndianWrite for NetworkAddress {
-    type Output = Box<[u8]>;
+    type Output = Vec<u8>;
     fn to_le_bytes(&self) -> Self::Output {
-        let buf: Self::Output = Self::Output::default();
-        let known_size: usize = self.len();
-        let buffer_size: usize = buf.len();
-        assert_eq!(known_size, buffer_size);
-        let [boxed_field2] = match self {
-            Self::NonVersion(field0, field1, field2, field3) => {
-                // Box::new(*field2)
-                [*field2]
-                    .map( |x| { Box::new(x)})
-            },
-            // Both variant's code looks the same, but are being treated differently in type.
-            // TODO: generics
-            Self::Version(field0, field1, field2, field3) => {            
-                // Box::new(*field2)
-                [*field2]
-                    .map( |x| { Box::new(x)})
-                
-           }
-        };
-        Box::new([])
+        let mut options = self.to_be_bytes();
+        options.reverse();
+        options
     }
     fn to_be_bytes(&self) -> Self::Output {
-        Box::new([])
+        let mut options = match self {
+            Self::NonVersion(options)
+            | Self::Version(options)  => {
+                options
+                    .into_iter()
+                    .map(|x| {0} )
+                    // .map(|x| {*x.to_be_bytes()})
+                    // .sum::<Vec<u8>>()
+                    .collect::<Vec<u8>>()
+                    // .map( |x| { Box::new(x)})
+            },
+        };
+        options
     }
 }
 
