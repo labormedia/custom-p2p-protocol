@@ -1,4 +1,7 @@
-use crate::traits::EndianWrite;
+use crate::traits::{
+    EndianWrite,
+    Length
+};
 use core::net::{
     Ipv4Addr,
     Ipv6Addr,
@@ -40,28 +43,92 @@ impl EndianWrite for IP {
     }
 }
 
+enum NetworkOptions {
+    NetworkTime(Option<[u8;NETWORK_TIME]>),
+    NetworkServices(Option<[u8;NETWORK_TIME]>),
+    NetworkIpvXX(Option<[u8;NETWORK_TIME]>),
+    NetworkPort(Option<[u8;NETWORK_TIME]>),
+}
+
+impl Length for NetworkOptions {
+    fn len(&self) -> usize {
+        match self {
+            NetworkOptions::NetworkTime(option)
+            | NetworkOptions::NetworkServices(option)
+            | NetworkOptions::NetworkIpvXX(option)
+            | NetworkOptions::NetworkPort(option) => {
+                match option {
+                    None => 0_usize,
+                    Some(serial_layout) => {
+                        serial_layout.len()
+                    }
+                }
+            }
+        }
+    }
+}
+
 // Defines use of network address (they differ)
 #[derive(Clone)]
 pub enum NetworkAddress { 
-    NonVersion([u8;NETWORK_TIME], [u8;NETWORK_SERVICES], [u8;NETWORK_IPvXX], [u8;NETWORK_PORT]),
-    Version([u8;NETWORK_SERVICES], [u8;NETWORK_IPvXX], [u8;NETWORK_PORT]),
+    NonVersion(
+        [u8;NETWORK_TIME], 
+        [u8;NETWORK_SERVICES], 
+        [u8;NETWORK_IPvXX], 
+        [u8;NETWORK_PORT]),
+    Version(
+        [u8;0],
+        [u8;NETWORK_SERVICES], 
+        [u8;NETWORK_IPvXX], 
+        [u8;NETWORK_PORT]),
 }
 
-impl NetworkAddress {
-    pub fn len(&self) -> usize{
+impl Length for NetworkAddress {
+    fn len(&self) -> usize {
         match self {
             Self::NonVersion(field0, field1, field2, field3) => {
                 field0.len()
                 + field1.len()
                 + field2.len()
                 + field3.len()
-           },
-            Self::Version(field0, field1, field2) => {
+            },
+            // Both variant's code looks the same, but are being treated differently in type.
+            Self::Version(field0, field1, field2, field3) => {
                 field0.len()
                 + field1.len()
                 + field2.len()
-            }
+                + field3.len()
+           },
         }
+    }
+}
+
+impl EndianWrite for NetworkAddress {
+    type Output = Box<[u8]>;
+    fn to_le_bytes(&self) -> Self::Output {
+        let buf: Self::Output = Self::Output::default();
+        let known_size: usize = self.len();
+        let buffer_size: usize = buf.len();
+        assert_eq!(known_size, buffer_size);
+        let [boxed_field2] = match self {
+            Self::NonVersion(field0, field1, field2, field3) => {
+                // Box::new(*field2)
+                [*field2]
+                    .map( |x| { Box::new(x)})
+            },
+            // Both variant's code looks the same, but are being treated differently in type.
+            // TODO: generics
+            Self::Version(field0, field1, field2, field3) => {            
+                // Box::new(*field2)
+                [*field2]
+                    .map( |x| { Box::new(x)})
+                
+           }
+        };
+        Box::new([])
+    }
+    fn to_be_bytes(&self) -> Self::Output {
+        Box::new([])
     }
 }
 
@@ -107,7 +174,7 @@ impl Default for NetworkAddress {
 }
 
 
-#[test]
-fn check_network_ip_sizes() {
-    todo!()
-}
+// #[test]
+// fn check_network_ip_sizes() {
+//     todo!()
+// }

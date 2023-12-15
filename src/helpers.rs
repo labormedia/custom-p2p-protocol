@@ -52,6 +52,12 @@ pub fn to_hex_string_from_slice(data: &[u8]) -> String {
         .join("")
 }
 
+pub fn le_concatenate<'a, T>(buffer: &'a [u8], byte_sequence: &[u8], data_sequence: &[u8]) -> &'a [u8] {
+    let a = 0;
+    let b = byte_sequence[0];
+    buffer
+}
+
 #[test]
 fn check_u32_to_le_bytes_endianess() {
     let num: u32 = 42;

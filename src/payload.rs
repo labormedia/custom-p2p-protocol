@@ -1,6 +1,9 @@
 use crate::{
     network_address::NetworkAddress,
-    traits::EndianWrite,
+    traits::{
+        EndianWrite,
+        Length
+    },
 };
 
 // Opaque types
@@ -43,15 +46,15 @@ impl EndianWrite for VersionPayload {
             self.relay.len(),
         ];     
         let mut buf = [0;90];
-        buf[..self.version.len()].copy_from_slice(&self.version);
-        // buf.copy_from_slice(&self.services);
-        // buf.copy_from_slice(&self.timestamp);
-        // buf.copy_from_slice(&self.addr_recv);
-        // buf.copy_from_slice(&self.addr_from);
-        // buf.copy_from_slice(&self.nonce);
-        // buf.copy_from_slice(&self.user_agent);
-        // buf.copy_from_slice(&self.start_height);
-        // buf.copy_from_slice(&self.relay);
+        buf[0..byte_sequence[0]].copy_from_slice(&self.version);
+        buf[byte_sequence[0]..byte_sequence[1]].copy_from_slice(&self.services);
+        buf[byte_sequence[1]..byte_sequence[2]].copy_from_slice(&self.timestamp);
+        buf[byte_sequence[2]..byte_sequence[3]].copy_from_slice(&self.addr_recv.to_be_bytes());
+        buf[byte_sequence[3]..byte_sequence[4]].copy_from_slice(&self.addr_from);
+        buf[byte_sequence[4]..byte_sequence[5]].copy_from_slice(&self.nonce);
+        buf[byte_sequence[5]..byte_sequence[6]].copy_from_slice(&self.user_agent);
+        buf[byte_sequence[6]..byte_sequence[7]].copy_from_slice(&self.start_height);
+        buf[byte_sequence[7]..byte_sequence[8]].copy_from_slice(&self.relay);
         buf
     }
 }

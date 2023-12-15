@@ -9,3 +9,7 @@ pub trait EndianRead {
     fn from_le_bytes(input: Self::Input) -> Self;
     fn from_be_bytes(input: Self::Input) -> Self;
 }
+
+pub trait Length {
+    fn len(&self) -> usize;
+}
