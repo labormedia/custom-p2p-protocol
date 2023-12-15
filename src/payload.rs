@@ -1,4 +1,7 @@
-use crate::traits::EndianWrite;
+use crate::{
+    network_address::NetworkAddress,
+    traits::EndianWrite,
+};
 
 // Opaque types
 
@@ -7,7 +10,10 @@ pub struct VersionPayload {
     version: [u8; 4],
     services: [u8; 8],
     timestamp: [u8; 8],
-    addr_recv: [u8; 26],
+    // addr_recv: [u8; 26],
+    // The three datum that composes addr_recv
+    // are defined in NetworkAddress enum.
+    addr_recv: NetworkAddress,
     // Fields below require version ≥ 106
     addr_from: [u8; 26],
     nonce: [u8; 8],

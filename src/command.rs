@@ -2,6 +2,7 @@ use core::{
     fmt::{
         self,
         Display,
+        Formatter,
     },
 };
 use crate::payload::{
@@ -16,7 +17,7 @@ pub enum Command {
 }
 
 impl Display for Command {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let s = match self {
             Command::Ping(_) => "ping",
             Command::Verack => "verack",

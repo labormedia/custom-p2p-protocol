@@ -1,3 +1,5 @@
+#![feature(ip_in_core)]
+
 pub mod errors;
 pub mod payload;
 pub mod traits;
