@@ -132,7 +132,7 @@ impl EndianWrite for NetworkOptions {
                 }
             },
         };
-        Vec::new()
+        options
     }
 }
 
