@@ -16,6 +16,7 @@ pub const NETWORK_PORT: usize = 2;
 
 // 
 pub const DEFAULT_IPADDR: [u8; NETWORK_IPvXX] = Ipv4Addr::new(127, 0, 0, 1).to_ipv6_mapped().octets();
+pub const DEFAULT_PORT: i16 = 8333;
 
 // Defines variants for IPv4 and IPv6.
 pub enum IP {
@@ -211,7 +212,8 @@ impl EndianWrite for Services {
             Services::NODE_COMPACT_FILTERS => Services::NODE_COMPACT_FILTERS as i32,
             Services::NODE_NETWORK_LIMITED => Services::NODE_NETWORK_LIMITED as i32,
         };
-        buf.clone_from_slice(&a.to_le_bytes());
+        assert_eq!(a.to_le_bytes().len(), 4);
+        buf[0..4].clone_from_slice(&a.to_le_bytes());
         buf
     }
 }
@@ -219,8 +221,14 @@ impl EndianWrite for Services {
  // Default for all variants
 impl Default for NetworkAddress {
     fn default() -> Self {
-        let network_address = DEFAULT_IPADDR;
-        todo!()
+        NetworkAddress::Version(
+            [
+                NetworkOptions::NetworkTime(None), 
+                NetworkOptions::NetworkServices(Some(Services::NODE_NETWORK.to_be_bytes())), 
+                NetworkOptions::NetworkIpvXX(Some(DEFAULT_IPADDR)), 
+                NetworkOptions::NetworkPort(Some(DEFAULT_PORT.to_be_bytes()))
+            ]
+        )
     }
 }
 

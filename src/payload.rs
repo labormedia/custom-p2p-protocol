@@ -46,15 +46,33 @@ impl EndianWrite for VersionPayload {
             self.relay.len(),
         ];     
         let mut buf = [0;90];
-        buf[0..byte_sequence[0]].copy_from_slice(&self.version);
-        buf[byte_sequence[0]..byte_sequence[1]].copy_from_slice(&self.services);
-        buf[byte_sequence[1]..byte_sequence[2]].copy_from_slice(&self.timestamp);
-        buf[byte_sequence[2]..byte_sequence[3]].copy_from_slice(&self.addr_recv.to_be_bytes());
-        buf[byte_sequence[3]..byte_sequence[4]].copy_from_slice(&self.addr_from);
-        buf[byte_sequence[4]..byte_sequence[5]].copy_from_slice(&self.nonce);
-        buf[byte_sequence[5]..byte_sequence[6]].copy_from_slice(&self.user_agent);
-        buf[byte_sequence[6]..byte_sequence[7]].copy_from_slice(&self.start_height);
-        buf[byte_sequence[7]..byte_sequence[8]].copy_from_slice(&self.relay);
+        let mut start = 0;
+        let mut end = start + byte_sequence[0];
+        buf[start..end].copy_from_slice(&self.version);
+        start = start + byte_sequence[0];
+        end = start + byte_sequence[1];
+        buf[start..end].copy_from_slice(&self.services);
+        start = start + byte_sequence[1];
+        end = start + byte_sequence[2];
+        buf[start..end].copy_from_slice(&self.timestamp);
+        start = start + byte_sequence[2];
+        end = start + byte_sequence[3];
+        buf[start..end].copy_from_slice(&self.addr_recv.to_be_bytes());
+        start = start + byte_sequence[3];
+        end = start + byte_sequence[4];
+        buf[start..end].copy_from_slice(&self.addr_from);
+        start = start + byte_sequence[4];
+        end = start + byte_sequence[5];
+        buf[start..end].copy_from_slice(&self.nonce);
+        start = start + byte_sequence[5];
+        end = start + byte_sequence[6];
+        buf[start..end].copy_from_slice(&self.user_agent);
+        start = start + byte_sequence[6];
+        end = start + byte_sequence[7];
+        buf[start..end].copy_from_slice(&self.start_height);
+        start = start + byte_sequence[7];
+        end = start + byte_sequence[8];
+        buf[start..end].copy_from_slice(&self.relay);
         buf
     }
 }
