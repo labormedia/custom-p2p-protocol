@@ -80,6 +80,14 @@ fn empty_long_checksum() {
 }
 
 #[test]
+fn known_string_checksum() {
+    let mut checksum = long_checksum(b"hello");
+    checksum.reverse();
+    let hash = to_hex_string_from_slice(&checksum);
+    assert_eq!(hash, "9595c9df90075148eb06860365df33584b75bff782a510c6cd4883a419833d50");
+}
+
+#[test]
 fn block_125552() { // https://blockchair.com/bitcoin/block/125552
     let binding = "01000000".to_owned() +
         "81cd02ab7e569e8bcd9317e2fe99f2de44d49ab2b8851ba4a308000000000000" +
