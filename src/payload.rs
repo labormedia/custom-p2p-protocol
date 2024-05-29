@@ -1,3 +1,5 @@
+use std::time::{Duration, SystemTime};
+use rand::prelude::*;
 use crate::{
     network_address::{
         self,
@@ -25,7 +27,7 @@ pub struct VersionPayload {
     addr_from: [u8; 26],
     nonce: [u8; 8],
     user_agent: [u8; 1], // This variable size is fixated here for code simplicity.
-    start_height: [u8; 8],
+    start_height: [u8; 4],
     // Fields below require version ≥ 70001
     relay: [u8; 1]
 }
@@ -36,23 +38,28 @@ impl Default for VersionPayload {
             NetworkAddress::Version(multi_address) => multi_address,
             NetworkAddress::NonVersion(multi_address) => multi_address,
         };
-        let services: [u8; NETWORK_SERVICES] = multi_address[1].to_be_bytes().into_iter().collect::<Vec<u8>>().try_into().unwrap();
+        let version = 70015_u32.to_le_bytes();
+        let services: [u8; NETWORK_SERVICES] = multi_address[1].to_be_bytes().into_iter().collect::<Vec<u8>>().try_into().expect("Default not well defined.");
+        let timestamp = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs().to_le_bytes();
+        let nonce: [u8; 8] = rand::thread_rng().gen::<u64>().to_le_bytes();
+        #[cfg(debug_assertions)]
+        println!("Nonce {:?}", nonce);
         VersionPayload {
-            version: [0; 4],
+            version,
             services,
-            timestamp: [0; 8],
+            timestamp,
             addr_recv: NetworkAddress::default(),
-            addr_from: NetworkAddress::default().to_le_bytes().try_into().unwrap(),
-            nonce: [0; 8],
+            addr_from: NetworkAddress::default().to_be_bytes().try_into().unwrap(),
+            nonce,
             user_agent: [0; 1],
-            start_height: [0; 8],
+            start_height: [0; 4],
             relay: [0; 1],
         }
     }
 }
 
 impl EndianWrite for VersionPayload {
-    type Output = [u8;90];
+    type Output = [u8;86];
     fn to_le_bytes(&self) -> Self::Output {
         let mut buf = self.to_be_bytes();
         buf.reverse();
@@ -70,7 +77,9 @@ impl EndianWrite for VersionPayload {
             self.start_height.len(),
             self.relay.len(),
         ];     
-        let mut buf = [0;90];
+        let total_sequence: usize = byte_sequence.iter().sum();
+        assert_eq!(total_sequence, 86); // This is hardcoded at this stage for convenience. TODO: implement dynamic size
+        let mut buf = [0;86];
         let mut start = 0;
         let mut end = start + byte_sequence[0];
         buf[start..end].copy_from_slice(&self.version);

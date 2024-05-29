@@ -46,6 +46,21 @@ pub fn le_checksum(data: &[u8]) -> [u8; CHECKSUM_SIZE] {
     [buf[3], buf[2], buf[1], buf[0]]
 }
 
+pub fn be_checksum(data: &[u8]) -> [u8; CHECKSUM_SIZE] {
+    let mut hasher = Sha256::new();
+    hasher.update(data);
+    let hash = hasher.finalize();
+
+    let mut hasher = Sha256::new();
+    hasher.update(hash);
+    let hash = hasher.finalize();
+
+    let mut buf = [0u8; CHECKSUM_SIZE];
+    buf.clone_from_slice(&hash[..CHECKSUM_SIZE]);
+
+    [buf[0], buf[1], buf[2], buf[3]]
+}
+
 pub fn to_bytes_from_slice(str_slice: &str) -> Vec<u8> {
     (0..str_slice.len())
         .step_by(2)

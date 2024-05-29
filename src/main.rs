@@ -61,9 +61,12 @@ async fn version_handshake(target: SocketAddr) -> Result<Vec<u8>, Box<dyn errors
     println!("Resolving for {:?}", target);
     let mut stream = TcpStream::connect(target).await?;
     let payload = VersionPayload::default();
-    let ping_header = MessageHeader::version()?.to_be_bytes_with_payload(&payload.to_le_bytes())?;
-    let mut ping_header_with_payload = [0_u8; 114]; // 24 + 90
+    let ping_header = MessageHeader::version()?.to_be_bytes_with_payload(&payload.to_be_bytes())?;
+    let mut ping_header_with_payload = [0_u8; 110]; // 24 + 90
     ping_header_with_payload[..COMMAND_SIZE].copy_from_slice(&ping_header);
+    assert_eq!(payload.to_be_bytes().len(), 86);
+    #[cfg(debug_assertions)]
+    println!("Payload {:?}", payload.to_be_bytes());
     ping_header_with_payload[COMMAND_SIZE..].copy_from_slice(&payload.to_be_bytes());
     #[cfg(debug_assertions)]
     println!("Bytes to send {:?}", ping_header_with_payload);

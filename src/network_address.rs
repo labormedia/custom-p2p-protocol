@@ -16,7 +16,7 @@ pub const NETWORK_PORT: usize = 2;
 
 // 
 pub const DEFAULT_IPADDR: [u8; NETWORK_IPvXX] = Ipv4Addr::new(127, 0, 0, 1).to_ipv6_mapped().octets();
-pub const DEFAULT_PORT: i16 = 8333;
+pub const DEFAULT_PORT: u16 = 8333;
 
 // Defines variants for IPv4 and IPv6.
 pub enum IP {
@@ -179,7 +179,7 @@ impl EndianWrite for NetworkAddress {
             | Self::Version(options)  => {
                 options
                     .into_iter()
-                    .map(|x| {x.to_le_bytes()} )  // TODO: check double endianess
+                    .map(|x| {x.to_be_bytes()} )  // TODO: check double endianess
                     .flatten()
                     .collect::<Self::Output>()
             },
