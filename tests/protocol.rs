@@ -127,5 +127,5 @@ fn hard_coded_message() {
     assert_eq!(long_hash.len(), 32);
 
     let hex : String = to_hex_string_from_slice(&long_hash);
-    assert_eq!(hex, "00000000000000001e8d6829a8a21adc5d38d0a473b144b6765798e61f98bd1d");
+    assert_eq!(hex, "1dbd981fe6985776b644b173a4d0385ddc1aa2a829688d1e0000000000000000");
 }

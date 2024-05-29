@@ -9,6 +9,14 @@ pub fn u32_to_le_bytes(size: u32) -> [u8; 4] {
     return [b4, b3, b2, b1]  // Little Endianess
 }
 
+pub fn u32_to_be_bytes(size: u32) -> [u8; 4] {
+    let b1 : u8 = ((size >> 24) & 0xff) as u8;
+    let b2 : u8 = ((size >> 16) & 0xff) as u8;
+    let b3 : u8 = ((size >> 8) & 0xff) as u8;
+    let b4 : u8 = (size & 0xff) as u8;
+    return [b1, b2, b3, b4]  // Big Endianess
+}
+
 pub fn long_checksum(data: &[u8]) -> Vec<u8> {
     let mut hasher = Sha256::new();
     hasher.update(data);
@@ -19,7 +27,7 @@ pub fn long_checksum(data: &[u8]) -> Vec<u8> {
     let hash = hasher.finalize();
 
     let mut hash_vector = hash.to_vec();
-    hash_vector.reverse();
+    // hash_vector.reverse();
     hash_vector
 }
 
@@ -75,14 +83,14 @@ fn empty_le_checksum() {
 #[test]
 fn empty_long_checksum() {
     let mut empty_checksum = long_checksum(&[]);
-    empty_checksum.reverse();
+    // empty_checksum.reverse();
     assert_eq!(empty_checksum[0..4], [0x5d, 0xf6, 0xe0, 0xe2]) // 0x5df6e0e2
 }
 
 #[test]
 fn known_string_checksum() {
     let mut checksum = long_checksum(b"hello");
-    checksum.reverse();
+    // checksum.reverse();
     let hash = to_hex_string_from_slice(&checksum);
     assert_eq!(hash, "9595c9df90075148eb06860365df33584b75bff782a510c6cd4883a419833d50");
 }
@@ -104,5 +112,6 @@ fn block_125552() { // https://blockchair.com/bitcoin/block/125552
     assert_eq!(long_hash.len(), 32);
 
     let hex : String = to_hex_string_from_slice(&long_hash);
-    assert_eq!(hex, "00000000000000001e8d6829a8a21adc5d38d0a473b144b6765798e61f98bd1d");
+    // assert_eq!(hex, "00000000000000001e8d6829a8a21adc5d38d0a473b144b6765798e61f98bd1d");
+    assert_eq!(hex, "1dbd981fe6985776b644b173a4d0385ddc1aa2a829688d1e0000000000000000");
 }

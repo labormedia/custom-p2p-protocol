@@ -45,7 +45,7 @@ impl EndianWrite for IP {
 }
 
 #[derive(Clone)]
-enum NetworkOptions {
+pub enum NetworkOptions {
     NetworkTime(Option<[u8;NETWORK_TIME]>),
     NetworkServices(Option<[u8;NETWORK_SERVICES]>),
     NetworkIpvXX(Option<[u8;NETWORK_IPvXX]>),
@@ -91,6 +91,10 @@ impl Length for NetworkOptions {
     }
 }
 
+// NetworkTime(Option<[u8;NETWORK_TIME]>),
+// NetworkServices(Option<[u8;NETWORK_SERVICES]>),
+// NetworkIpvXX(Option<[u8;NETWORK_IPvXX]>),
+// NetworkPort(Option<[u8;NETWORK_PORT]>),
 impl EndianWrite for NetworkOptions {
     type Output = Vec<u8>;
     fn to_le_bytes(&self) -> Self::Output {
@@ -175,9 +179,9 @@ impl EndianWrite for NetworkAddress {
             | Self::Version(options)  => {
                 options
                     .into_iter()
-                    .map(|x| {x.to_be_bytes()} )  // TODO: check double endianess
+                    .map(|x| {x.to_le_bytes()} )  // TODO: check double endianess
                     .flatten()
-                    .collect::<Vec<u8>>()
+                    .collect::<Self::Output>()
             },
         };
         options
@@ -203,18 +207,18 @@ impl EndianWrite for Services {
     }
     fn to_be_bytes(&self) -> Self::Output {
         let mut buf: Self::Output = Self::Output::default();
-        let a: i32 = match self {
-            Services::NODE_NETWORK => Services::NODE_NETWORK as i32,
-            Services::NODE_GETUTXO => Services::NODE_GETUTXO as i32,
-            Services::NODE_BLOOM => Services::NODE_BLOOM as i32,
-            Services::NODE_WITNESS => Services::NODE_WITNESS as i32,
-            Services::NODE_XTHIN => Services::NODE_XTHIN as i32,
-            Services::NODE_COMPACT_FILTERS => Services::NODE_COMPACT_FILTERS as i32,
-            Services::NODE_NETWORK_LIMITED => Services::NODE_NETWORK_LIMITED as i32,
+        let a: i64 = match self {
+            Services::NODE_NETWORK => Services::NODE_NETWORK as i64,
+            Services::NODE_GETUTXO => Services::NODE_GETUTXO as i64,
+            Services::NODE_BLOOM => Services::NODE_BLOOM as i64,
+            Services::NODE_WITNESS => Services::NODE_WITNESS as i64,
+            Services::NODE_XTHIN => Services::NODE_XTHIN as i64,
+            Services::NODE_COMPACT_FILTERS => Services::NODE_COMPACT_FILTERS as i64,
+            Services::NODE_NETWORK_LIMITED => Services::NODE_NETWORK_LIMITED as i64,
         };
-        assert_eq!(a.to_le_bytes().len(), 4);
-        buf[0..4].clone_from_slice(&a.to_le_bytes());
-        buf
+        assert_eq!(a.to_be_bytes().len(), 8);
+        buf[0..8].clone_from_slice(&a.to_be_bytes());
+        a.to_be_bytes()
     }
 }
 
@@ -224,7 +228,7 @@ impl Default for NetworkAddress {
         NetworkAddress::Version(
             [
                 NetworkOptions::NetworkTime(None), 
-                NetworkOptions::NetworkServices(Some(Services::NODE_NETWORK.to_be_bytes())), 
+                NetworkOptions::NetworkServices(Some(Services::NODE_NETWORK.to_le_bytes())), 
                 NetworkOptions::NetworkIpvXX(Some(DEFAULT_IPADDR)), 
                 NetworkOptions::NetworkPort(Some(DEFAULT_PORT.to_be_bytes()))
             ]

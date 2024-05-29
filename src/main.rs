@@ -60,8 +60,8 @@ async fn main() -> Result<(), Box<dyn errors::Error>> {
 async fn version_handshake(target: SocketAddr) -> Result<Vec<u8>, Box<dyn errors::Error>> {
     println!("Resolving for {:?}", target);
     let mut stream = TcpStream::connect(target).await?;
-    let payload: VersionPayload = Default::default();
-    let ping_header = MessageHeader::version()?.to_le_bytes_with_payload(&payload.to_be_bytes())?;
+    let payload = VersionPayload::default();
+    let ping_header = MessageHeader::version()?.to_be_bytes_with_payload(&payload.to_le_bytes())?;
     let mut ping_header_with_payload = [0_u8; 114]; // 24 + 90
     ping_header_with_payload[..COMMAND_SIZE].copy_from_slice(&ping_header);
     ping_header_with_payload[COMMAND_SIZE..].copy_from_slice(&payload.to_be_bytes());
@@ -84,7 +84,7 @@ async fn stream_process(target: SocketAddr) -> Result<Vec<u8>, Box<dyn errors::E
     println!("Resolving for {:?}", target);
     let mut stream = TcpStream::connect(target).await?;
     let payload: [u8; 8] = [1,1,1,1,1,1,1,1];
-    let ping_header = MessageHeader::ping()?.to_le_bytes_with_payload(&payload)?;
+    let ping_header = MessageHeader::ping()?.to_be_bytes_with_payload(&payload)?;
     let mut ping_header_with_payload = [0_u8; 32];
     ping_header_with_payload[..COMMAND_SIZE].copy_from_slice(&ping_header);
     ping_header_with_payload[COMMAND_SIZE..].copy_from_slice(&payload);

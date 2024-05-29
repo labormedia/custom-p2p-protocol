@@ -1,5 +1,9 @@
 use crate::{
-    network_address::NetworkAddress,
+    network_address::{
+        self,
+        NetworkAddress,
+        NETWORK_SERVICES,
+    },
     traits::{
         EndianWrite,
         Length
@@ -8,7 +12,7 @@ use crate::{
 
 // Opaque types
 
-#[derive(Default, Clone)]
+#[derive(Clone)]
 pub struct VersionPayload {
     version: [u8; 4],
     services: [u8; 8],
@@ -24,6 +28,27 @@ pub struct VersionPayload {
     start_height: [u8; 8],
     // Fields below require version ≥ 70001
     relay: [u8; 1]
+}
+
+impl Default for VersionPayload {
+    fn default() -> VersionPayload {
+        let multi_address = match NetworkAddress::default() {
+            NetworkAddress::Version(multi_address) => multi_address,
+            NetworkAddress::NonVersion(multi_address) => multi_address,
+        };
+        let services: [u8; NETWORK_SERVICES] = multi_address[1].to_be_bytes().into_iter().collect::<Vec<u8>>().try_into().unwrap();
+        VersionPayload {
+            version: [0; 4],
+            services,
+            timestamp: [0; 8],
+            addr_recv: NetworkAddress::default(),
+            addr_from: NetworkAddress::default().to_le_bytes().try_into().unwrap(),
+            nonce: [0; 8],
+            user_agent: [0; 1],
+            start_height: [0; 8],
+            relay: [0; 1],
+        }
+    }
 }
 
 impl EndianWrite for VersionPayload {

@@ -93,12 +93,12 @@ impl EndianWrite for MessageHeader {
 
 impl MessageHeader {
     pub fn version() -> Result<Self, Box<dyn errors::Error>> {
-        let version_payload: VersionPayload = Default::default();
-        let payload_size = helpers::u32_to_le_bytes(90);
-        let checksum = helpers::le_checksum(&version_payload.to_le_bytes());
+        let version_payload = VersionPayload::default().to_le_bytes();
+        let payload_size = helpers::u32_to_le_bytes(version_payload.len() as u32);
+        let checksum = helpers::le_checksum(&version_payload);
         Ok(Self {
             start_string: NETWORK.to_le_bytes(),
-            command_name: Command::Version(version_payload).to_le_bytes(),
+            command_name: Command::Version(VersionPayload::default()).to_be_bytes(),
             payload_size,
             checksum,
         })
@@ -130,6 +130,15 @@ impl MessageHeader {
             self.payload_size = helpers::u32_to_le_bytes(payload.len().try_into()?);
             self.checksum = helpers::le_checksum(payload);
             Ok(self.to_le_bytes())
+        }
+    }
+    pub fn to_be_bytes_with_payload(&mut self, payload: &[u8]) -> Result<[u8;COMMAND_SIZE], Box<dyn errors::Error>> {
+        if helpers::u32_to_le_bytes(payload.len().try_into()?) != self.payload_size {
+            return Err(Box::new(errors::ErrorSide::PayloadSizeMismatch(Box::new(self.payload_size))))
+        } else {
+            self.payload_size = helpers::u32_to_le_bytes(payload.len().try_into()?);
+            self.checksum = helpers::le_checksum(payload);
+            Ok(self.to_be_bytes())
         }
     }
 }
