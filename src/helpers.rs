@@ -43,7 +43,7 @@ pub fn le_checksum(data: &[u8]) -> [u8; CHECKSUM_SIZE] {
     let mut buf = [0u8; CHECKSUM_SIZE];
     buf.clone_from_slice(&hash[..CHECKSUM_SIZE]);
 
-    [buf[3], buf[2], buf[1], buf[0]]
+    [buf[0], buf[1], buf[2], buf[3]]
 }
 
 pub fn be_checksum(data: &[u8]) -> [u8; CHECKSUM_SIZE] {
@@ -58,7 +58,7 @@ pub fn be_checksum(data: &[u8]) -> [u8; CHECKSUM_SIZE] {
     let mut buf = [0u8; CHECKSUM_SIZE];
     buf.clone_from_slice(&hash[..CHECKSUM_SIZE]);
 
-    [buf[0], buf[1], buf[2], buf[3]]
+    [buf[3], buf[2], buf[1], buf[0]]
 }
 
 pub fn to_bytes_from_slice(str_slice: &str) -> Vec<u8> {

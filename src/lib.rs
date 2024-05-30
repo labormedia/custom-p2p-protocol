@@ -92,8 +92,8 @@ impl EndianWrite for MessageHeader {
 }
 
 impl MessageHeader {
-    pub fn version() -> Result<Self, Box<dyn errors::Error>> {
-        let version_payload = VersionPayload::default().to_be_bytes();
+    pub fn version(version_payload: [u8; 86]) -> Result<Self, Box<dyn errors::Error>> {
+        // let version_payload = VersionPayload::default().to_be_bytes();
         let payload_size = helpers::u32_to_le_bytes(version_payload.len() as u32);
         let checksum = helpers::le_checksum(&version_payload);
         Ok(Self {

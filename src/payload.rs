@@ -40,10 +40,9 @@ impl Default for VersionPayload {
         };
         let version = 70015_u32.to_le_bytes();
         let services: [u8; NETWORK_SERVICES] = multi_address[1].to_be_bytes().into_iter().collect::<Vec<u8>>().try_into().expect("Default not well defined.");
-        let timestamp = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs().to_le_bytes();
+        let timestamp = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).expect("Time System.").as_secs().to_le_bytes();
         let nonce: [u8; 8] = rand::thread_rng().gen::<u64>().to_le_bytes();
-        #[cfg(debug_assertions)]
-        println!("Nonce {:?}", nonce);
+        let height = 845_684_u32.to_le_bytes();
         VersionPayload {
             version,
             services,
@@ -51,9 +50,9 @@ impl Default for VersionPayload {
             addr_recv: NetworkAddress::default(),
             addr_from: NetworkAddress::default().to_be_bytes().try_into().unwrap(),
             nonce,
-            user_agent: [0; 1],
-            start_height: [0; 4],
-            relay: [0; 1],
+            user_agent: [0_u8; 1],
+            start_height: height,
+            relay: [0_u8; 1],
         }
     }
 }
