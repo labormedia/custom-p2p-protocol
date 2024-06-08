@@ -6,7 +6,7 @@ use p2p_handshake::{
     PAYLOAD_SIZE_SIZE,
     CHECKSUM_SIZE,
     COMMAND_SIZE,
-    payload::{
+    message::payload::{
         PingPayload,
         VersionPayload,
     },

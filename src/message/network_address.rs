@@ -137,6 +137,8 @@ impl EndianWrite for NetworkOptions {
                 }
             },
         };
+        #[cfg(debug_assertions)]
+        println!("Network Options {:?}", options);
         options
     }
 }

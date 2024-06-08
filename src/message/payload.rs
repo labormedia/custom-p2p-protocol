@@ -1,7 +1,7 @@
 use std::time::{Duration, SystemTime};
 use rand::prelude::*;
 use crate::{
-    network_address::{
+    message::network_address::{
         self,
         NetworkAddress,
         NETWORK_SERVICES,

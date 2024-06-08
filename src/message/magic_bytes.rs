@@ -1,4 +1,4 @@
-use crate::EndianWrite;
+use crate::traits::EndianWrite;
 
 pub enum Network {
     Mainnet,

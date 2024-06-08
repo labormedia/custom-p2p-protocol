@@ -25,10 +25,12 @@ use tokio::{
 };
 use p2p_handshake::{
     errors,
-    MessageHeader,
+    message::{
+        payload::VersionPayload,
+        header::MessageHeader
+    },
     COMMAND_SIZE,
-    VersionPayload,
-    EndianWrite,
+    traits::EndianWrite,
 };
 
 #[tokio::main]
