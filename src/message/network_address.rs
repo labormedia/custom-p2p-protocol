@@ -1,6 +1,12 @@
-use crate::traits::{
-    EndianWrite,
-    Length
+use crate::{
+    errors::{
+        ErrorSide,
+        Error
+    },
+    traits::{
+        EndianWrite,
+        Length
+    },
 };
 use core::net::{
     Ipv4Addr,
@@ -152,6 +158,20 @@ pub enum NetworkAddress {
     Version(
         [NetworkOptions;4]
     ),
+}
+
+impl NetworkAddress {
+    pub fn set_ip(&mut self, ip: &[u8; NETWORK_IPvXX]) -> Result<[u8;NETWORK_IPvXX], Box<dyn Error>> {
+        match self {
+            Self::Version(options) | Self::NonVersion(options) => {
+                options[3] = NetworkOptions::NetworkIpvXX(Some(ip.clone()));
+            },
+            _ => {
+                return Err(Box::new(ErrorSide::Unreachable))
+            }
+        }
+        Ok(ip.clone())
+    }
 }
 
 impl Length for NetworkAddress {
