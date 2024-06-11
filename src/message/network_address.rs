@@ -305,7 +305,7 @@ fn networkaddress_default_ip() {
 
 #[test]
 fn networkaddress_set_ip() {
-    let new_address = NetworkAddress::default();
+    let mut new_address = NetworkAddress::default();
     new_address.set_ip(&Ipv4Addr::new(8, 0, 0, 1).to_ipv6_mapped().octets()).expect("Wrong assumptions");
     assert_eq!(new_address.to_be_bytes(), [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,8,0,0,1,32,141]);
 }
