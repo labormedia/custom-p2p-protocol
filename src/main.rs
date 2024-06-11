@@ -8,6 +8,10 @@ use std::{
     println,
     str
 };
+use core::net::{
+    Ipv4Addr,
+    Ipv6Addr,
+};
 
 use alloc::{
     vec::Vec,
@@ -26,7 +30,10 @@ use tokio::{
 use p2p_handshake::{
     errors,
     message::{
-        payload::VersionPayload,
+        payload::{
+            VersionPayload,
+            VersionPayloadBuilder,
+        },
         header::MessageHeader
     },
     COMMAND_SIZE,
@@ -63,15 +70,28 @@ async fn main() -> Result<(), Box<dyn errors::Error>> {
 async fn version_handshake(target: SocketAddr) -> Result<Vec<u8>, Box<dyn errors::Error>> {
     println!("Resolving for {:?}", target);
     let mut stream = TcpStream::connect(target).await?;
-    let payload = VersionPayload::default();
+    let target = match target {
+        SocketAddr::V4(v4_address) => {
+            v4_address.ip().to_ipv6_mapped().octets()
+        },
+        SocketAddr::V6(v6_address) => {
+            v6_address.ip().octets()
+        }
+    };
+    let payload = VersionPayloadBuilder::init()
+        .with_addr_recv(&target)?
+        .with_addr_from(&Ipv4Addr::new(127, 0, 0, 1).to_ipv6_mapped().octets())?
+        .build();
+    #[cfg(debug_assertions)]
+    println!("Default Payload {:?}", payload);
     let ping_header = MessageHeader::version(payload.to_be_bytes())?.to_be_bytes_with_payload(&payload.to_be_bytes())?;
-    let mut ping_header_with_payload = [0_u8; 110]; // 24 + 90
+    let mut ping_header_with_payload = [0_u8; 110]; // 24 + 86
     ping_header_with_payload[..COMMAND_SIZE].copy_from_slice(&ping_header);
     assert_eq!(payload.to_be_bytes().len(), 86);
     #[cfg(debug_assertions)]
     println!("Payload {:?}", payload.to_be_bytes());
     ping_header_with_payload[COMMAND_SIZE..].copy_from_slice(&payload.to_be_bytes());
-    #[cfg(debug_assertions)]
+    //#[cfg(debug_assertions)]
     println!("Bytes to send {:?}", ping_header_with_payload);
     let _ = stream.write_all(&ping_header_with_payload).await?;
     // read data from stream

@@ -1,6 +1,6 @@
 use p2p_handshake::{
-    EndianWrite,
-    Command,
+    traits::EndianWrite,
+    message::command::Command,
     START_STRING_SIZE,
     COMMAND_NAME_SIZE,
     PAYLOAD_SIZE_SIZE,

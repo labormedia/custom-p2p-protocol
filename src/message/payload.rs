@@ -1,20 +1,25 @@
 use std::time::{Duration, SystemTime};
+use core::net::Ipv4Addr;
 use rand::prelude::*;
 use crate::{
     message::network_address::{
         self,
         NetworkAddress,
         NETWORK_SERVICES,
+        DEFAULT_IPADDR,
+        NETWORK_IPvXX,
+        NetworkOptions,
     },
     traits::{
         EndianWrite,
         Length
     },
+    errors,
 };
 
 // Opaque types
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct VersionPayload {
     version: [u8; 4],
     services: [u8; 8],
@@ -32,9 +37,64 @@ pub struct VersionPayload {
     relay: [u8; 1]
 }
 
+#[derive(Default, Debug)]
+pub struct VersionPayloadBuilder {
+    version_template: VersionPayload,
+}
+
+
+
+impl VersionPayloadBuilder {
+    pub fn init() -> Self {
+        VersionPayloadBuilder {
+            version_template: VersionPayload::default()
+        }
+    }
+    pub fn with_addr_recv(mut self, ip: &[u8; NETWORK_IPvXX]) -> Result<Self, Box<dyn errors::Error>> {
+        let ip_address: [u8; NETWORK_IPvXX] = (match ip {
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, ..] => Ok(ip.clone()), // Checks the binary format for IPv6 segments.
+            _ => Err(Box::new(errors::ErrorSide::InvalidIPv6Segments)),
+        })?;
+        #[cfg(debug_assertions)]
+        println!("To addr_recv address {:?}", ip_address);
+        match self.version_template.addr_recv {
+            NetworkAddress::Version(mut options) => {
+                #[cfg(debug_assertions)]
+                println!("Version Payload address for addr_recv {:?}", options[0x02]);
+                options[0x02] = NetworkOptions::NetworkIpvXX(Some(ip_address));
+                self.version_template.addr_recv = NetworkAddress::Version(options);
+                Ok(self)
+            },
+            NetworkAddress::NonVersion(mut options) => {
+                #[cfg(debug_assertions)]
+                println!("NonVersion Payload address for addr_recv{:?}", options[0x02]);
+                options[2] = NetworkOptions::NetworkIpvXX(Some(ip_address));
+                self.version_template.addr_recv = NetworkAddress::NonVersion(options);
+                Ok(self)
+            },
+            _ => {
+                return Err(Box::new(errors::ErrorSide::Unreachable))
+            }
+        }
+    }
+    pub fn with_addr_from(mut self, ip: &[u8; NETWORK_IPvXX]) -> Result<Self, Box<dyn errors::Error>> {
+        let ip_address: [u8; NETWORK_IPvXX] = (match ip {
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, ..] => Ok(ip.clone()), // Checks the binary format for IPv6 segments.
+            _ => Err(Box::new(errors::ErrorSide::InvalidIPv6Segments)),
+        })?;
+        let mut network_options = NetworkAddress::default();
+        let _ = network_options.set_ip(&ip_address)?;
+        self.version_template.addr_from.clone_from_slice(&network_options.to_be_bytes());
+        Ok(self)
+    }
+    pub fn build(self) -> VersionPayload {
+        self.version_template.clone()
+    }
+}
+
 impl Default for VersionPayload {
     fn default() -> VersionPayload {
-        let multi_address = match NetworkAddress::default() {
+        let multi_address = match NetworkAddress::non_version_with_ip(&DEFAULT_IPADDR).expect("Default not well defined.") {
             NetworkAddress::Version(multi_address) => multi_address,
             NetworkAddress::NonVersion(multi_address) => multi_address,
         };
@@ -43,12 +103,14 @@ impl Default for VersionPayload {
         let timestamp = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).expect("Time System.").as_secs().to_le_bytes();
         let nonce: [u8; 8] = rand::thread_rng().gen::<u64>().to_le_bytes();
         let height = 845_684_u32.to_le_bytes();
+        let addr_recv = NetworkAddress::Version(multi_address.clone());
+        let addr_from = addr_recv.to_be_bytes().try_into().expect("Unexpected initial state.");
         VersionPayload {
             version,
             services,
             timestamp,
-            addr_recv: NetworkAddress::default(),
-            addr_from: NetworkAddress::default().to_be_bytes().try_into().unwrap(),
+            addr_recv,
+            addr_from,
             nonce,
             user_agent: [0_u8; 1],
             start_height: height,

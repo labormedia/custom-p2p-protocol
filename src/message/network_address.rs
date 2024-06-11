@@ -50,12 +50,13 @@ impl EndianWrite for IP {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy, Debug)]
+#[repr(usize)]
 pub enum NetworkOptions {
-    NetworkTime(Option<[u8;NETWORK_TIME]>),
-    NetworkServices(Option<[u8;NETWORK_SERVICES]>),
-    NetworkIpvXX(Option<[u8;NETWORK_IPvXX]>),
-    NetworkPort(Option<[u8;NETWORK_PORT]>),
+    NetworkTime(Option<[u8;NETWORK_TIME]>) = 0x00,
+    NetworkServices(Option<[u8;NETWORK_SERVICES]>) = 0x01,
+    NetworkIpvXX(Option<[u8;NETWORK_IPvXX]>) = 0x02,
+    NetworkPort(Option<[u8;NETWORK_PORT]>) = 0x03,
 }
 
 impl Length for NetworkOptions {
@@ -143,14 +144,12 @@ impl EndianWrite for NetworkOptions {
                 }
             },
         };
-        #[cfg(debug_assertions)]
-        println!("Network Options {:?}", options);
         options
     }
 }
 
 // Defines use of network address (they differ)
-#[derive(Clone)]
+#[derive(Clone, Copy, Debug)]
 pub enum NetworkAddress { 
     NonVersion(
         [NetworkOptions;4]
@@ -161,16 +160,46 @@ pub enum NetworkAddress {
 }
 
 impl NetworkAddress {
+    pub fn non_version_with_ip(ip: &[u8; NETWORK_IPvXX]) -> Result<Self, Box<dyn Error>> {
+        match ip {
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, ..] => return Ok(NetworkAddress::NonVersion(
+                [
+                    NetworkOptions::NetworkTime(None), 
+                    NetworkOptions::NetworkServices(Some(Services::NODE_NETWORK.to_le_bytes())), 
+                    NetworkOptions::NetworkIpvXX(Some(*ip)), 
+                    NetworkOptions::NetworkPort(Some(DEFAULT_PORT.to_be_bytes()))
+                ]
+            )), // Checks the binary format for IPv6 segments.
+            _ => Err(Box::new(ErrorSide::InvalidIPv6Segments)),
+        }?
+    }
     pub fn set_ip(&mut self, ip: &[u8; NETWORK_IPvXX]) -> Result<[u8;NETWORK_IPvXX], Box<dyn Error>> {
-        match self {
-            Self::Version(options) | Self::NonVersion(options) => {
-                options[3] = NetworkOptions::NetworkIpvXX(Some(ip.clone()));
+        let ip_address = (match ip {
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, ..] => Ok(ip.clone()), // Checks the binary format for IPv6 segments.
+            _ => { 
+                Err(Box::new(ErrorSide::InvalidIPv6Segments))
+            },
+        })?;
+        *self = match self {
+            Self::Version(mut options) => {
+                options[0x02] = NetworkOptions::NetworkIpvXX(Some(ip_address));
+                #[cfg(debug_assertions)]
+                println!("Version Payload address {:?}", options[0x02]);
+                Self::Version(options)
+            },
+            Self::NonVersion(mut options) => {
+                options[0x02] = NetworkOptions::NetworkIpvXX(Some(ip_address));
+                #[cfg(debug_assertions)]
+                println!("NonVersion Payload address for NetworkAddress{:?}", options[0x02]);
+                Self::NonVersion(options)
             },
             _ => {
                 return Err(Box::new(ErrorSide::Unreachable))
             }
-        }
-        Ok(ip.clone())
+        };
+        #[cfg(debug_assertions)]
+        println!("--------------New Self {:?}", self);
+        Ok(ip_address)
     }
 }
 
@@ -201,7 +230,11 @@ impl EndianWrite for NetworkAddress {
             | Self::Version(options)  => {
                 options
                     .into_iter()
-                    .map(|x| {x.to_be_bytes()} )  // TODO: check double endianess
+                    .map(|x| {
+                        //#[cfg(debug_assertions)]
+                        //println!("option --------- {:?}", x);
+                        x.to_be_bytes()
+                    } )  // TODO: check double endianess
                     .flatten()
                     .collect::<Self::Output>()
             },
@@ -240,7 +273,7 @@ impl EndianWrite for Services {
         };
         assert_eq!(a.to_be_bytes().len(), 8);
         buf[0..8].clone_from_slice(&a.to_be_bytes());
-        a.to_be_bytes()
+        buf
     }
 }
 
@@ -263,3 +296,16 @@ impl Default for NetworkAddress {
 // fn check_network_ip_sizes() {
 //     todo!()
 // }
+
+#[test]
+fn networkaddress_default_ip() {
+    let new_address = NetworkAddress::default();
+    assert_eq!(new_address.to_be_bytes(), [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,127,0,0,1,32,141]);
+}
+
+#[test]
+fn networkaddress_set_ip() {
+    let new_address = NetworkAddress::default();
+    new_address.set_ip(&Ipv4Addr::new(8, 0, 0, 1).to_ipv6_mapped().octets()).expect("Wrong assumptions");
+    assert_eq!(new_address.to_be_bytes(), [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,8,0,0,1,32,141]);
+}

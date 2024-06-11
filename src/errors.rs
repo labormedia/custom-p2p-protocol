@@ -5,6 +5,7 @@ use core::fmt;
 pub enum ErrorSide {
     PayloadSizeMismatch(Box<[u8]>),
     Unreachable,
+    InvalidIPv6Segments,
 }
 
 impl fmt::Display for ErrorSide {
@@ -12,6 +13,7 @@ impl fmt::Display for ErrorSide {
         match self {
             ErrorSide::PayloadSizeMismatch(size) => write!(f, "Payload Size Mismatch : {:?}.", size),
             ErrorSide::Unreachable => write!(f, "Unreachable code."),
+            ErrorSide::InvalidIPv6Segments => write!(f, "Invalid IPv6 segments."),
         }
         
     }

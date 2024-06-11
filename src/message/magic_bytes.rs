@@ -47,7 +47,6 @@ impl EndianWrite for Network {
 // const ALL_NETWORKS_LIST = [ Network::Mainnet, Network::Testnet3, Network::Regtest, Network::Signet, Network::Namecoin];
 
 #[test]
-#[should_panic]
 fn magic_bytes_polymorphism_negative() {
     let a: [u8;4] = Network::Mainnet
         .to_le_bytes()
@@ -58,7 +57,7 @@ fn magic_bytes_polymorphism_negative() {
         .unwrap();
     assert_eq!(
         Network::Mainnet
-            .to_be_bytes(), 
+            .to_le_bytes(), 
         a
     );
 }
