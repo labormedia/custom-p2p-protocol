@@ -31,7 +31,7 @@ pub fn long_checksum(data: &[u8]) -> Vec<u8> {
     hash_vector
 }
 
-pub fn le_checksum(data: &[u8]) -> [u8; CHECKSUM_SIZE] {
+pub fn le_checksum(data: impl AsRef<[u8]>) -> [u8; CHECKSUM_SIZE] {
     let mut hasher = Sha256::new();
     hasher.update(data);
     let hash = hasher.finalize();

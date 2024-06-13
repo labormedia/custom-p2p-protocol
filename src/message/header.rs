@@ -1,5 +1,5 @@
 pub use crate::{
-    COMMAND_SIZE, START_STRING_SIZE, COMMAND_NAME_SIZE, PAYLOAD_SIZE_SIZE, CHECKSUM_SIZE,
+    COMMAND_SIZE, START_STRING_SIZE, COMMAND_NAME_SIZE, PAYLOAD_SIZE_SIZE, CHECKSUM_SIZE, EMPTY_VERSION_SIZE, CUSTOM_VERSION_SIZE,
     traits::EndianWrite,
     message::{
         command::Command,
@@ -55,7 +55,7 @@ impl EndianWrite for MessageHeader {
 }
 
 impl MessageHeader {
-    pub fn version(version_payload: [u8; 86]) -> Result<Self, Box<dyn errors::Error>> {
+    pub fn version(version_payload: [u8; CUSTOM_VERSION_SIZE]) -> Result<Self, Box<dyn errors::Error>> {
         // let version_payload = VersionPayload::default().to_be_bytes();
         let payload_size = helpers::u32_to_le_bytes(version_payload.len() as u32);
         let checksum = helpers::le_checksum(&version_payload);

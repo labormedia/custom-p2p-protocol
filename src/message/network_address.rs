@@ -201,6 +201,22 @@ impl NetworkAddress {
         println!("--------------New Self {:?}", self);
         Ok(ip_address)
     }
+    pub fn set_port(&mut self, port: u16) -> Result<[u8;NETWORK_PORT], Box<dyn Error>> {
+        *self = match self {
+            Self::Version(mut options) => {
+                options[0x03] = NetworkOptions::NetworkPort(Some(port.to_be_bytes()));
+                Self::Version(options)
+            },
+            Self::NonVersion(mut options) => {
+                options[0x03] = NetworkOptions::NetworkPort(Some(port.to_be_bytes()));
+                Self::NonVersion(options)
+            },
+            _ => {
+                return Err(Box::new(ErrorSide::Unreachable))
+            }
+        };
+        Ok(port.to_be_bytes())
+    }
 }
 
 impl Length for NetworkAddress {
@@ -308,4 +324,11 @@ fn networkaddress_set_ip() {
     let mut new_address = NetworkAddress::default();
     new_address.set_ip(&Ipv4Addr::new(8, 0, 0, 1).to_ipv6_mapped().octets()).expect("Wrong assumptions");
     assert_eq!(new_address.to_be_bytes(), [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,8,0,0,1,32,141]);
+}
+
+#[test]
+fn networkaddress_set_port_to_0() {
+    let mut new_address = NetworkAddress::default();
+    new_address.set_port(0);
+    assert_eq!(new_address.to_be_bytes(), [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,127,0,0,1,0,0]);
 }
