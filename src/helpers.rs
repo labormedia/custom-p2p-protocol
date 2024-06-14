@@ -26,9 +26,7 @@ pub fn long_checksum(data: &[u8]) -> Vec<u8> {
     hasher.update(hash);
     let hash = hasher.finalize();
 
-    let mut hash_vector = hash.to_vec();
-    // hash_vector.reverse();
-    hash_vector
+    hash.to_vec()
 }
 
 pub fn le_checksum(data: impl AsRef<[u8]>) -> [u8; CHECKSUM_SIZE] {

@@ -1,29 +1,4 @@
-use std::time::{Duration, SystemTime};
-use core::net::Ipv4Addr;
-use rand::prelude::*;
-use crate::{
-    protocol_builder::PayloadBuilder,
-    START_STRING_SIZE,
-    EMPTY_VERSION_SIZE,
-    CUSTOM_VERSION_SIZE,
-    USER_AGENT_SIZE,
-    message::network_address::{
-        self,
-        NetworkAddress,
-        NETWORK_SERVICES,
-        DEFAULT_IPADDR,
-        NETWORK_IPvXX,
-        NetworkOptions,
-    },
-    traits::{
-        EndianWrite,
-        Length,
-        Builder,
-    },
-    errors,
-};
-
-// Opaque types
+use super::*;
 
 #[derive(Clone, Debug)]
 pub struct VersionPayload {
@@ -42,9 +17,7 @@ pub struct VersionPayload {
     relay: [u8; 1]
 }
 
-pub type VersionPayloadBuilder = PayloadBuilder<VersionPayload>;
-
-impl VersionPayloadBuilder {
+impl PayloadBuilder<VersionPayload> {
     pub fn with_addr_recv(mut self, ip: &[u8; NETWORK_IPvXX]) -> Result<Self, Box<dyn errors::Error>> {
         let ip_address: [u8; NETWORK_IPvXX] = (match ip {
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, ..] => Ok(ip.clone()), // Checks the binary format for IPv6 segments.
@@ -174,11 +147,6 @@ impl EndianWrite for VersionPayload {
         buf[start..end].copy_from_slice(&self.relay);
         buf
     }
-}
-
-#[derive(Default, Clone)]
-pub struct PingPayload {
-    pub nonce: [u8;8],
 }
 
 #[test]

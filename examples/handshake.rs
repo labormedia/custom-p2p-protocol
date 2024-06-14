@@ -29,11 +29,11 @@ use tokio::{
     // time::timeout,
 };
 use p2p_handshake::{
+    protocol_builder::PayloadBuilder,
     errors,
     message::{
         payload::{
             VersionPayload,
-            VersionPayloadBuilder,
         },
         header::MessageHeader
     },
@@ -83,7 +83,7 @@ async fn version_handshake(target: SocketAddr) -> Result<Vec<u8>, Box<dyn errors
             v6_address.ip().octets()
         }
     };
-    let payload = VersionPayloadBuilder::init()
+    let payload = PayloadBuilder::<VersionPayload>::init()
         .with_addr_recv(&target)?
         .with_addr_from(&Ipv4Addr::new(0,0,0,0).to_ipv6_mapped().octets())?
         .with_addr_from_port(0)?

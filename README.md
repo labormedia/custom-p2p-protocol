@@ -1,19 +1,12 @@
 # custom-p2p-protocol
 This is an example implementation of a p2p protocol based on https://en.bitcoin.it/wiki/Protocol_documentation .
 
-# Prerequisites
-For minimal library dependency, this implementation runs with unstable features. For this, nightly channel is needed for compilation:
+## Run example in debug mode:
 ```
-rustup install nightly
-rustup default nightly
+cargo run --example handshake
 ```
 
-## Run in debug mode:
+## Run example in release mode:
 ```
-cargo run
-```
-
-## Run in release mode:
-```
-cargo run --release
+cargo run --release --example handshake
 ```

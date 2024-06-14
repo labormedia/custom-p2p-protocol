@@ -18,7 +18,7 @@ use p2p_handshake::{
 #[test]
 fn check_command_size() {
     let total_size = START_STRING_SIZE + COMMAND_NAME_SIZE + PAYLOAD_SIZE_SIZE + CHECKSUM_SIZE;
-    assert_eq!(total_size, COMMAND_SIZE)
+    assert_eq!(total_size, COMMAND_SIZE);
 }
 
 #[test]

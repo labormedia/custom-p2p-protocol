@@ -14,15 +14,6 @@ pub trait Length {
     fn len(&self) -> usize;
 }
 
-
-///´´´
-/// type SomeType = [u8]
-/// type SomethingBuild = PayloadBuilder<SomeType>;
-///
-/// fn build_something() -> SomeType {
-///     SomethingBuild::init().build()
-/// }
-///´´´
 pub trait Builder {
     type Item;
     fn init() -> Self;
