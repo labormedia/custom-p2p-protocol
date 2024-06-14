@@ -63,15 +63,11 @@ impl VersionPayloadBuilder {
         match self.version_template.addr_recv {
             NetworkAddress::Version(mut options) => {
                 options[0x02] = NetworkOptions::NetworkIpvXX(Some(ip_address));
-                #[cfg(debug_assertions)]
-                println!("Version Payload address for addr_recv {:?}", options[0x02]);
                 self.version_template.addr_recv = NetworkAddress::Version(options);
                 Ok(self)
             },
             NetworkAddress::NonVersion(mut options) => {
                 options[2] = NetworkOptions::NetworkIpvXX(Some(ip_address));
-                #[cfg(debug_assertions)]
-                println!("NonVersion Payload address for addr_recv{:?}", options[0x02]);
                 self.version_template.addr_recv = NetworkAddress::NonVersion(options);
                 Ok(self)
             },

@@ -100,7 +100,7 @@ impl MessageHeader {
             return Err(Box::new(errors::ErrorSide::PayloadSizeMismatch(Box::new(self.payload_size))))
         } else {
             self.payload_size = helpers::u32_to_le_bytes(payload.len().try_into()?);
-            self.checksum = helpers::be_checksum(payload);
+            self.checksum = helpers::le_checksum(payload);
             Ok(self.to_be_bytes())
         }
     }
