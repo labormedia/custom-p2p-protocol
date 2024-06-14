@@ -67,12 +67,12 @@ impl MessageHeader {
         })
     }
     pub fn ping() -> Result<Self, Box<dyn errors::Error>> {  // The Payload of Ping is its nonce.
-        let ping_payload: PingPayload = Default::default();
+        let ping_payload: PingPayload = PingPayload::default();
         let payload_size = helpers::u32_to_le_bytes(ping_payload.nonce.len().try_into()?);
         let checksum = helpers::le_checksum(&ping_payload.nonce);
         Ok(Self {
             start_string: NETWORK.to_le_bytes(),
-            command_name: Command::Ping(ping_payload).to_le_bytes(),
+            command_name: Command::Ping(ping_payload).to_be_bytes(),
             payload_size,
             checksum,
         })
@@ -80,7 +80,7 @@ impl MessageHeader {
     pub fn verack() -> Result<Self, Box<dyn errors::Error>> {
         Ok(Self {
             start_string: NETWORK.to_le_bytes(),
-            command_name: Command::Verack.to_le_bytes(),
+            command_name: Command::Verack.to_be_bytes(),
             payload_size: [0x00, 0x00, 0x00, 0x00],
             // checksum: [0x5d, 0xf6, 0xe0, 0xe2] // Empty checksum 0x5df6e0e2 big-endian
             checksum: [0xe2, 0xe0, 0xf6, 0x5d] // Empty checksum 0x5df6e0e2 little-endian

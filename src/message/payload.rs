@@ -2,6 +2,7 @@ use std::time::{Duration, SystemTime};
 use core::net::Ipv4Addr;
 use rand::prelude::*;
 use crate::{
+    START_STRING_SIZE,
     EMPTY_VERSION_SIZE,
     CUSTOM_VERSION_SIZE,
     USER_AGENT_SIZE,
@@ -15,7 +16,8 @@ use crate::{
     },
     traits::{
         EndianWrite,
-        Length
+        Length,
+        Builder,
     },
     errors,
 };
@@ -27,10 +29,9 @@ pub struct VersionPayload {
     version: [u8; 4],
     services: [u8; 8],
     timestamp: [u8; 8],
-    // addr_recv: [u8; 26],
     // The three datum that composes addr_recv
     // are defined in NetworkAddress enum.
-    addr_recv: NetworkAddress,
+    addr_recv: NetworkAddress, // addr_recv: [u8; 26],
     // Fields below require version ≥ 106
     addr_from: [u8; 26],
     nonce: [u8; 8],
@@ -45,14 +46,19 @@ pub struct VersionPayloadBuilder {
     version_template: VersionPayload,
 }
 
-
-
-impl VersionPayloadBuilder {
-    pub fn init() -> Self {
+impl Builder for VersionPayloadBuilder {
+    type Item = VersionPayload;
+    fn init() -> Self {
         VersionPayloadBuilder {
             version_template: VersionPayload::default()
         }
     }
+    fn build(self) -> VersionPayload {
+        self.version_template.clone()
+    }
+}
+
+impl VersionPayloadBuilder {
     pub fn with_addr_recv(mut self, ip: &[u8; NETWORK_IPvXX]) -> Result<Self, Box<dyn errors::Error>> {
         let ip_address: [u8; NETWORK_IPvXX] = (match ip {
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, ..] => Ok(ip.clone()), // Checks the binary format for IPv6 segments.
@@ -97,9 +103,6 @@ impl VersionPayloadBuilder {
         self.version_template.addr_from[addr_from_length-port_bytes_length..addr_from_length].clone_from_slice(&port_bytes);
         Ok(self)
     }
-    pub fn build(self) -> VersionPayload {
-        self.version_template.clone()
-    }
 }
 
 impl Default for VersionPayload {
@@ -108,17 +111,18 @@ impl Default for VersionPayload {
             NetworkAddress::Version(multi_address) => multi_address,
             NetworkAddress::NonVersion(multi_address) => multi_address,
         };
-        let version = 70001_u32.to_le_bytes();
+        let version: [u8; 4] = 70001_u32.to_le_bytes();
         let services: [u8; NETWORK_SERVICES] = multi_address[1].to_be_bytes().into_iter().collect::<Vec<u8>>().try_into().expect("Default not well defined.");
         let timestamp = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).expect("Time System.").as_secs().to_le_bytes();
-        let nonce: [u8; 8] = rand::thread_rng().gen::<u64>().to_le_bytes();
-        let height = 0_u32.to_le_bytes();
-        let addr_recv = NetworkAddress::Version(multi_address.clone());
+        let addr_recv = NetworkAddress::Version(multi_address);
         let addr_from = addr_recv.to_be_bytes().try_into().expect("Unexpected initial state.");
+        let nonce: [u8; 8] = rand::thread_rng().gen::<u64>().to_le_bytes();
         let mut user_agent: [u8;USER_AGENT_SIZE] = [0_u8;USER_AGENT_SIZE];
-        let user_agent_size = user_agent.clone().len() as u8-1;
-        user_agent[0..1].copy_from_slice(&[user_agent_size]);
+        let start_height: [u8; START_STRING_SIZE] = 0_u32.to_le_bytes();
+        let user_agent_size: [u8; 1] = [user_agent.clone().len() as u8 - 1];  // One byte size for the moment.
+        user_agent[0..1].copy_from_slice(&user_agent_size);  // var_str <- var_int + char[]
         user_agent[1..].copy_from_slice(&"rust-example".as_bytes());
+        let relay = [0_u8; 1];
         VersionPayload {
             version,
             services,
@@ -127,8 +131,8 @@ impl Default for VersionPayload {
             addr_from,
             nonce,
             user_agent,
-            start_height: height,
-            relay: [0_u8; 1],
+            start_height,
+            relay,
         }
     }
 }

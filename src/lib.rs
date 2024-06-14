@@ -4,6 +4,7 @@ pub mod errors;
 pub mod traits;
 pub mod helpers;
 pub mod message;
+pub mod protocol_builder;
 
 
 use message::magic_bytes::Network;

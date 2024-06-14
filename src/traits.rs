@@ -13,3 +13,9 @@ pub trait EndianRead {
 pub trait Length {
     fn len(&self) -> usize;
 }
+
+pub trait Builder {
+    type Item;
+    fn init() -> Self;
+    fn build(self) -> Self::Item;
+}

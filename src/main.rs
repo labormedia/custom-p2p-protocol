@@ -38,7 +38,10 @@ use p2p_handshake::{
         header::MessageHeader
     },
     COMMAND_SIZE, EMPTY_VERSION_SIZE, CUSTOM_VERSION_SIZE,
-    traits::EndianWrite,
+    traits::{
+        EndianWrite,
+        Builder,
+    },
 };
 
 #[tokio::main]
@@ -98,15 +101,7 @@ async fn version_handshake(target: SocketAddr) -> Result<Vec<u8>, Box<dyn errors
     let future_return = stream.write_all(&version_header_with_payload).await?;
     // read data from stream
     let mut buf_reader = BufReader::new(stream);
-    //let mut rx: Vec<u8> = Vec::from([0]); 
-    //let to_check = buf_reader.take(26).into_inner().flush();
     let checked = check_bufread(buf_reader).await?;
-    //let rx_len = checked.len();
-    // #[cfg(debug_assertions)]
-    //println!("Received {} bytes", rx_len);
-    //println!("Bufreader to check {:?}", to_check);
-    //drop(buf_reader);
-    println!("Future return : {:?}", future_return);
     Ok(checked)
 }
 
