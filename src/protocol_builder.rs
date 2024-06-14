@@ -2,10 +2,10 @@ use crate::traits::Builder;
 
 #[derive(Default, Debug)]
 pub struct PayloadBuilder<T> {
-    payload_template: T,
+    pub payload_template: T,
 }
 
-impl<T: Default> Builder for PayloadBuilder<T> {
+impl<T: Default + Clone> Builder for PayloadBuilder<T> {
     type Item = T;
     fn init() -> Self {
         PayloadBuilder {
@@ -13,6 +13,6 @@ impl<T: Default> Builder for PayloadBuilder<T> {
         }
     }
     fn build(self) -> T {
-        self.payload_template
+        self.payload_template.clone()
     }
 }

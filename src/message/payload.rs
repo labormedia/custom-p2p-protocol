@@ -2,6 +2,7 @@ use std::time::{Duration, SystemTime};
 use core::net::Ipv4Addr;
 use rand::prelude::*;
 use crate::{
+    protocol_builder::PayloadBuilder,
     START_STRING_SIZE,
     EMPTY_VERSION_SIZE,
     CUSTOM_VERSION_SIZE,
@@ -41,22 +42,7 @@ pub struct VersionPayload {
     relay: [u8; 1]
 }
 
-#[derive(Default, Debug)]
-pub struct VersionPayloadBuilder {
-    version_template: VersionPayload,
-}
-
-impl Builder for VersionPayloadBuilder {
-    type Item = VersionPayload;
-    fn init() -> Self {
-        VersionPayloadBuilder {
-            version_template: VersionPayload::default()
-        }
-    }
-    fn build(self) -> VersionPayload {
-        self.version_template.clone()
-    }
-}
+pub type VersionPayloadBuilder = PayloadBuilder<VersionPayload>;
 
 impl VersionPayloadBuilder {
     pub fn with_addr_recv(mut self, ip: &[u8; NETWORK_IPvXX]) -> Result<Self, Box<dyn errors::Error>> {
@@ -66,15 +52,15 @@ impl VersionPayloadBuilder {
         })?;
         #[cfg(debug_assertions)]
         println!("To addr_recv address {:?}", ip_address);
-        match self.version_template.addr_recv {
+        match self.payload_template.addr_recv {
             NetworkAddress::Version(mut options) => {
                 options[0x02] = NetworkOptions::NetworkIpvXX(Some(ip_address));
-                self.version_template.addr_recv = NetworkAddress::Version(options);
+                self.payload_template.addr_recv = NetworkAddress::Version(options);
                 Ok(self)
             },
             NetworkAddress::NonVersion(mut options) => {
                 options[2] = NetworkOptions::NetworkIpvXX(Some(ip_address));
-                self.version_template.addr_recv = NetworkAddress::NonVersion(options);
+                self.payload_template.addr_recv = NetworkAddress::NonVersion(options);
                 Ok(self)
             },
             _ => {
@@ -83,7 +69,7 @@ impl VersionPayloadBuilder {
         }
     }
     pub fn with_addr_recv_port(mut self, port: u16) -> Result<Self, Box<dyn errors::Error>> {
-        self.version_template.addr_recv.set_port(port);
+        self.payload_template.addr_recv.set_port(port);
         Ok(self)
     }
     pub fn with_addr_from(mut self, ip: &[u8; NETWORK_IPvXX]) -> Result<Self, Box<dyn errors::Error>> {
@@ -93,14 +79,14 @@ impl VersionPayloadBuilder {
         })?;
         let mut network_options = NetworkAddress::default();
         let _ = network_options.set_ip(&ip_address)?;
-        self.version_template.addr_from.clone_from_slice(&network_options.to_be_bytes());
+        self.payload_template.addr_from.clone_from_slice(&network_options.to_be_bytes());
         Ok(self)
     }
     pub fn with_addr_from_port(mut self, port: u16) -> Result<Self, Box<dyn errors::Error>> {
         let port_bytes = port.to_be_bytes();
         let port_bytes_length = port_bytes.len();
-        let addr_from_length = self.version_template.addr_from.len();
-        self.version_template.addr_from[addr_from_length-port_bytes_length..addr_from_length].clone_from_slice(&port_bytes);
+        let addr_from_length = self.payload_template.addr_from.len();
+        self.payload_template.addr_from[addr_from_length - port_bytes_length..addr_from_length].clone_from_slice(&port_bytes);
         Ok(self)
     }
 }
