@@ -1,6 +1,9 @@
 pub use crate::{
     COMMAND_SIZE, START_STRING_SIZE, COMMAND_NAME_SIZE, PAYLOAD_SIZE_SIZE, CHECKSUM_SIZE, EMPTY_VERSION_SIZE, CUSTOM_VERSION_SIZE,
-    traits::EndianWrite,
+    traits::{
+        EndianWrite,
+        EndianRead,
+    },
     message::{
         command::Command,
         payload::{
@@ -13,11 +16,12 @@ pub use crate::{
     NETWORK,
 };
 
+#[derive(Debug)]
 pub struct MessageHeader {
-    start_string: [u8;START_STRING_SIZE],
-    command_name: [u8;COMMAND_NAME_SIZE],
-    payload_size: [u8;PAYLOAD_SIZE_SIZE],
-    checksum: [u8;CHECKSUM_SIZE],
+    pub start_string: [u8;START_STRING_SIZE],
+    pub command_name: [u8;COMMAND_NAME_SIZE],
+    pub payload_size: [u8;PAYLOAD_SIZE_SIZE],
+    pub checksum: [u8;CHECKSUM_SIZE],
 }
 
 impl EndianWrite for MessageHeader {
@@ -66,25 +70,25 @@ impl MessageHeader {
             checksum,
         })
     }
-    pub fn ping() -> Result<Self, Box<dyn errors::Error>> {  // The Payload of Ping is its nonce.
+    pub fn ping() -> Self {  // The Payload of Ping is its nonce.
         let ping_payload: PingPayload = PingPayload::default();
-        let payload_size = helpers::u32_to_le_bytes(ping_payload.nonce.len().try_into()?);
+        let payload_size = helpers::u32_to_le_bytes(ping_payload.nonce.len() as u32);
         let checksum = helpers::le_checksum(&ping_payload.nonce);
-        Ok(Self {
+        Self {
             start_string: NETWORK.to_le_bytes(),
             command_name: Command::Ping(ping_payload).to_be_bytes(),
             payload_size,
             checksum,
-        })
+        }
     }
-    pub fn verack() -> Result<Self, Box<dyn errors::Error>> {
-        Ok(Self {
+    pub fn verack() -> Self {
+        Self {
             start_string: NETWORK.to_le_bytes(),
             command_name: Command::Verack.to_be_bytes(),
             payload_size: [0x00, 0x00, 0x00, 0x00],
             // checksum: [0x5d, 0xf6, 0xe0, 0xe2] // Empty checksum 0x5df6e0e2 big-endian
             checksum: [0xe2, 0xe0, 0xf6, 0x5d] // Empty checksum 0x5df6e0e2 little-endian
-        })
+        }
     }
     pub fn to_le_bytes_with_payload(&mut self, payload: &[u8]) -> Result<[u8;COMMAND_SIZE], Box<dyn errors::Error>> {
         if helpers::u32_to_le_bytes(payload.len().try_into()?) != self.payload_size {
@@ -103,5 +107,19 @@ impl MessageHeader {
             self.checksum = helpers::le_checksum(payload);
             Ok(self.to_be_bytes())
         }
+    }
+}
+
+impl EndianRead for MessageHeader {
+    type Input = [u8; START_STRING_SIZE + COMMAND_NAME_SIZE + PAYLOAD_SIZE_SIZE + CHECKSUM_SIZE];
+    fn from_le_bytes(input: Self::Input) -> Self {
+        let start_string = &mut [0u8; START_STRING_SIZE];
+        let command_name = &mut [0u8; COMMAND_NAME_SIZE];
+        let payload_size = &mut [0u8; PAYLOAD_SIZE_SIZE];
+        let checksum = &mut [0u8; CHECKSUM_SIZE];
+        MessageHeader::verack()
+    }
+    fn from_be_bytes(input: Self::Input) -> Self {
+        MessageHeader::verack()
     }
 }

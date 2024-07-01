@@ -42,6 +42,7 @@ use p2p_handshake::{
         EndianWrite,
         Builder,
     },
+    helpers::le_checksum,
 };
 
 #[tokio::main]
@@ -57,7 +58,7 @@ async fn main() -> Result<(), Box<dyn errors::Error>> {
         match select_all(streams).await {
             (Ok(payload), _index, remaining) => {
                 #[cfg(debug_assertions)]
-                println!("Received Payload : {:?} {:?} {:?}", _index, payload.len(), payload);
+                println!("Received Payload Length: Index {:?} Size {:?}", _index, payload.len());
                 streams = remaining;
             },
             (Err(e), _index, remaining) => {
@@ -100,24 +101,44 @@ async fn version_handshake(target: SocketAddr) -> Result<Vec<u8>, Box<dyn errors
     println!("Bytes to send size {:?}", version_header_with_payload.len());
     let future_return = stream.write_all(&version_header_with_payload).await?;
     // read data from stream
-    let mut buf_reader = BufReader::new(stream);
+    let buf_reader = BufReader::new(stream);
     let checked = check_bufread(buf_reader).await?;
     Ok(checked)
 }
 
 async fn check_bufread(mut payload: BufReader<TcpStream>) -> Result<Vec<u8>, Box<dyn errors::Error>> {
-    let start_string = &mut [0u8; 4];
-    let command_name = &mut [0u8; 12];
-    //payload.read_exact(start_string).await?;
-    //payload.read_exact(command_name).await?;
-    //let payload_size = payload.read_u32_le().await?;
-    let checksum = &mut [0u8; 4];
-    //payload.read_exact(checksum).await?;
+    let mut start_string = [0u8; 4];
+    let mut command_name = [0u8; 12];
+    let mut payload_size = [0u8; 4];
+    let mut checksum = [0u8; 4];
+    payload.read_exact(&mut start_string).await?;
+    payload.read_exact(&mut command_name).await?;
+    payload.read_exact(&mut payload_size).await?;
+    payload.read_exact(&mut checksum).await?;
+    
+    let size = u32::from_be_bytes(payload_size);
 
-    let start_string = start_string.to_vec();
+    #[cfg(debug_assertions)]
+    println!("Check size {:?}", size);
+    let mut buf = Vec::with_capacity(size as usize);
+    payload.read_to_end(&mut buf).await?;
+    
+    let message_header = MessageHeader {
+        start_string,
+        command_name,
+        payload_size,
+        checksum,
+    };
+    
+    #[cfg(debug_assertions)]
+    println!("Received Header {:?}", message_header);
+    #[cfg(debug_assertions)]
+    println!("With payload {:?}", buf);
+    #[cfg(debug_assertions)]
+    println!("With checksum {:?}", le_checksum(buf));
 
-    let checksum = checksum.to_vec();
-    let mut payload_vec: Vec<u8> = Vec::new();
+    //let checksum = checksum.to_vec();
+    //let mut payload_vec: Vec<u8> = Vec::new();
     let my_bytes = payload.fill_buf().await?;
     //payload.consume(24);
     // Read payload bytes
