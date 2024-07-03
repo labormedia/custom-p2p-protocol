@@ -92,7 +92,7 @@ impl MessageHeader {
     }
     pub fn to_le_bytes_with_payload(&mut self, payload: &[u8]) -> Result<[u8;COMMAND_SIZE], Box<dyn errors::Error>> {
         if helpers::u32_to_le_bytes(payload.len().try_into()?) != self.payload_size {
-            return Err(Box::new(errors::ErrorSide::PayloadSizeMismatch(Box::new(self.payload_size))))
+            return Err(Box::new(errors::ErrorSide::PayloadSizeMismatch(payload.len())))
         } else {
             self.payload_size = helpers::u32_to_le_bytes(payload.len().try_into()?);
             self.checksum = helpers::le_checksum(payload);
@@ -101,7 +101,7 @@ impl MessageHeader {
     }
     pub fn to_be_bytes_with_payload(&mut self, payload: &[u8]) -> Result<[u8;COMMAND_SIZE], Box<dyn errors::Error>> {
         if helpers::u32_to_le_bytes(payload.len().try_into()?) != self.payload_size {
-            return Err(Box::new(errors::ErrorSide::PayloadSizeMismatch(Box::new(self.payload_size))))
+            return Err(Box::new(errors::ErrorSide::PayloadSizeMismatch(payload.len())))
         } else {
             self.payload_size = helpers::u32_to_le_bytes(payload.len().try_into()?);
             self.checksum = helpers::le_checksum(payload);

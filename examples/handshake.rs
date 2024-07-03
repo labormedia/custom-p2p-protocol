@@ -30,12 +30,15 @@ use tokio::{
 };
 use p2p_handshake::{
     protocol_builder::PayloadBuilder,
-    errors,
+    errors::{
+        self,
+        ErrorSide::*
+    },
     message::{
         payload::{
             VersionPayload,
         },
-        header::MessageHeader
+        header::MessageHeader,
     },
     COMMAND_SIZE, EMPTY_VERSION_SIZE, CUSTOM_VERSION_SIZE,
     traits::{
@@ -46,7 +49,7 @@ use p2p_handshake::{
 };
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn errors::Error>> {
+async fn main() -> Result<(), errors::ErrorSide> {
     let resolved_addrs: Vec<_> = lookup_host(("seed.bitcoin.sipa.be", 8333)).await?.collect();
     let mut streams: Vec<_> = resolved_addrs
         .into_iter()
@@ -59,6 +62,9 @@ async fn main() -> Result<(), Box<dyn errors::Error>> {
             (Ok(payload), _index, remaining) => {
                 #[cfg(debug_assertions)]
                 println!("Received Payload Length: Index {:?} Size {:?}", _index, payload.len());
+                if payload.len() > 0 {
+                    return Err(PayloadSizeMismatch(payload.len()));
+                }
                 streams = remaining;
             },
             (Err(e), _index, remaining) => {
@@ -135,7 +141,7 @@ async fn check_bufread(mut payload: BufReader<TcpStream>) -> Result<Vec<u8>, Box
     #[cfg(debug_assertions)]
     println!("With payload {:?}", buf);
     #[cfg(debug_assertions)]
-    println!("With checksum {:?}", le_checksum(buf));
+    println!("With checksum {:?}", le_checksum(&buf));
 
     //let checksum = checksum.to_vec();
     //let mut payload_vec: Vec<u8> = Vec::new();
