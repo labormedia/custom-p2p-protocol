@@ -24,6 +24,8 @@ pub struct MessageHeader {
     pub checksum: [u8;CHECKSUM_SIZE],
 }
 
+pub const HEADER_SIZE: usize = START_STRING_SIZE + COMMAND_NAME_SIZE + PAYLOAD_SIZE_SIZE + CHECKSUM_SIZE;
+
 impl EndianWrite for MessageHeader {
     type Output = [u8; COMMAND_SIZE];
     fn to_be_bytes(&self) -> Self::Output {
@@ -113,13 +115,29 @@ impl MessageHeader {
 impl EndianRead for MessageHeader {
     type Input = [u8; START_STRING_SIZE + COMMAND_NAME_SIZE + PAYLOAD_SIZE_SIZE + CHECKSUM_SIZE];
     fn from_le_bytes(input: Self::Input) -> Self {
-        let start_string = &mut [0u8; START_STRING_SIZE];
-        let command_name = &mut [0u8; COMMAND_NAME_SIZE];
-        let payload_size = &mut [0u8; PAYLOAD_SIZE_SIZE];
-        let checksum = &mut [0u8; CHECKSUM_SIZE];
-        MessageHeader::verack()
+        let mut cursor = 0;
+        let start_string: [u8; START_STRING_SIZE] = input[cursor..START_STRING_SIZE].try_into().expect("[cursor..cursor+SIZE] has size SIZE.");
+        cursor += START_STRING_SIZE;
+        let command_name: [u8; COMMAND_NAME_SIZE] = input[cursor..cursor + COMMAND_NAME_SIZE].try_into().expect("[cursor..cursor+SIZE] has size SIZE.");
+        cursor += COMMAND_NAME_SIZE;
+        let payload_size: [u8; PAYLOAD_SIZE_SIZE] = input[cursor..cursor + PAYLOAD_SIZE_SIZE].try_into().expect("[cursor..cursor+SIZE] has size SIZE.");
+        cursor += PAYLOAD_SIZE_SIZE;
+        let checksum: [u8; CHECKSUM_SIZE] = input[cursor..cursor + CHECKSUM_SIZE].try_into().expect("[cursor..cursor+SIZE] has size SIZE.");
+        MessageHeader {
+            start_string,
+            command_name,
+            payload_size,
+            checksum,
+        }
     }
     fn from_be_bytes(input: Self::Input) -> Self {
-        MessageHeader::verack()
+        let be_message_header = Self::from_le_bytes(input.into_iter().rev().collect::<Vec<u8>>().try_into().expect("[cursor..cursor+SIZE] has size SIZE."));
+        /* These cases are expressed in a comment for further considerations.
+        let start_string: [u8; START_STRING_SIZE] = le_message_header.start_string.into_iter().rev().collect::<Vec<u8>>().try_into().expect("[cursor..cursor+SIZE] has size SIZE.");
+        let command_name: [u8; COMMAND_NAME_SIZE] = le_message_header.command_anme.into_iter().rev().collect::<Vec<u8>>().try_into().expect("[cursor..cursor+SIZE] has size SIZE.");
+        let payload_size: [u8; PAYLOAD_SIZE_SIZE] = le_message_header.payload_size.into_iter().rev().collect::<Vec<u8>>().try_into().expect("[cursor..cursor+SIZE] has size SIZE.");
+        let checksum: [u8; CHECKSUM_SIZE] = le_message_header.checksum.into_iter().rev().collect::<Vec<u8>>().try_into().expect("[cursor..cursor+SIZE] has size SIZE.");
+        */
+        be_message_header
     }
 }

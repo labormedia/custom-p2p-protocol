@@ -38,11 +38,15 @@ use p2p_handshake::{
         payload::{
             VersionPayload,
         },
-        header::MessageHeader,
+        header::{
+            MessageHeader,
+            HEADER_SIZE,
+        },
     },
     COMMAND_SIZE, EMPTY_VERSION_SIZE, CUSTOM_VERSION_SIZE,
     traits::{
         EndianWrite,
+        EndianRead,
         Builder,
     },
     helpers::le_checksum,
@@ -119,6 +123,11 @@ async fn version_handshake(target: SocketAddr) -> Result<Vec<u8>, Box<dyn errors
 
 async fn check_bufread(label: &str, mut payload: &mut BufWriter<BufReader<TcpStream>>) -> Result<Vec<u8>, Box<dyn errors::Error>> {
     println!("Buffer size : {}", payload.buffer().len());
+    let mut header: [u8; HEADER_SIZE] = [0u8; HEADER_SIZE];
+    payload.read_exact(&mut header).await?;
+    println!("Header : {:?}", header);
+    let message_header = MessageHeader::from_le_bytes(header);
+    /*
     let mut start_string = [0u8; 4];
     let mut command_name = [0u8; 12];
     let mut payload_size = [0u8; 4];
@@ -128,20 +137,14 @@ async fn check_bufread(label: &str, mut payload: &mut BufWriter<BufReader<TcpStr
     payload.read_exact(&mut command_name).await?;
     payload.read_exact(&mut payload_size).await?;
     payload.read_exact(&mut checksum).await?;
+    */
     
-    let size = u32::from_be_bytes(payload_size);
+    let size = u32::from_be_bytes(message_header.payload_size);
 
     #[cfg(debug_assertions)]
     println!("Check size {:?}", size);
     let mut buf = Vec::with_capacity(size as usize);
     payload.read_to_end(&mut buf).await?;
-    
-    let message_header = MessageHeader {
-        start_string,
-        command_name,
-        payload_size,
-        checksum,
-    };
     
     #[cfg(debug_assertions)]
     println!("Received Header for label {} {:?}", label, message_header);
