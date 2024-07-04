@@ -21,7 +21,7 @@ use alloc::{
 use futures::future::select_all;
 
 use tokio::{
-    io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader},
+    io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader, BufWriter},
     net::{
         lookup_host, 
         TcpStream
@@ -61,7 +61,7 @@ async fn main() -> Result<(), errors::ErrorSide> {
         match select_all(streams).await {
             (Ok(payload), _index, remaining) => {
                 #[cfg(debug_assertions)]
-                println!("Received Payload Length: Index {:?} Size {:?}", _index, payload.len());
+                println!("Received Payload Length: Index {:?} Size {:?} \n {:?}", _index, payload.len(), payload);
                 if payload.len() > 0 {
                     return Err(PayloadSizeMismatch(payload.len()));
                 }
@@ -98,6 +98,7 @@ async fn version_handshake(target: SocketAddr) -> Result<Vec<u8>, Box<dyn errors
     #[cfg(debug_assertions)]
     println!("Default Payload {:?}", payload);
     let version_header = MessageHeader::version(payload.to_be_bytes())?.to_be_bytes_with_payload(&payload.to_be_bytes())?;
+    let verack_header = MessageHeader::verack();
     let mut version_header_with_payload = [0_u8; 122]; // 24 + 98
     version_header_with_payload[..COMMAND_SIZE].copy_from_slice(&version_header);
     assert_eq!(payload.to_be_bytes().len(), CUSTOM_VERSION_SIZE);
@@ -105,18 +106,24 @@ async fn version_handshake(target: SocketAddr) -> Result<Vec<u8>, Box<dyn errors
     //#[cfg(debug_assertions)]
     println!("Bytes to send {:?}", version_header_with_payload);
     println!("Bytes to send size {:?}", version_header_with_payload.len());
-    let future_return = stream.write_all(&version_header_with_payload).await?;
+    let _ = stream.write_all(&version_header_with_payload).await?;
     // read data from stream
-    let buf_reader = BufReader::new(stream);
-    let checked = check_bufread(buf_reader).await?;
+    let mut buffer = BufWriter::new(BufReader::new(stream));
+    let checked = check_bufread("first round", &mut buffer).await?;
+    //println!("-----------------------------------------------------");
+    //println!("to write {:?}", verack_header.to_be_bytes());
+    //let _ = buffer.get_mut().write_all(&verack_header.to_be_bytes()).await?;
+    //let checked_b = check_bufread("second round", &mut buffer).await?;
     Ok(checked)
 }
 
-async fn check_bufread(mut payload: BufReader<TcpStream>) -> Result<Vec<u8>, Box<dyn errors::Error>> {
+async fn check_bufread(label: &str, mut payload: &mut BufWriter<BufReader<TcpStream>>) -> Result<Vec<u8>, Box<dyn errors::Error>> {
+    println!("Buffer size : {}", payload.buffer().len());
     let mut start_string = [0u8; 4];
     let mut command_name = [0u8; 12];
     let mut payload_size = [0u8; 4];
     let mut checksum = [0u8; 4];
+    if payload.buffer().len() > 0 { println!("Buffer size : {}", payload.buffer().len()) }; 
     payload.read_exact(&mut start_string).await?;
     payload.read_exact(&mut command_name).await?;
     payload.read_exact(&mut payload_size).await?;
@@ -137,11 +144,11 @@ async fn check_bufread(mut payload: BufReader<TcpStream>) -> Result<Vec<u8>, Box
     };
     
     #[cfg(debug_assertions)]
-    println!("Received Header {:?}", message_header);
+    println!("Received Header for label {} {:?}", label, message_header);
     #[cfg(debug_assertions)]
-    println!("With payload {:?}", buf);
+    println!("With payload for label {} {:?}", label, buf);
     #[cfg(debug_assertions)]
-    println!("With checksum {:?}", le_checksum(&buf));
+    println!("With checksum for label {} {:?}", label, le_checksum(&buf));
 
     //let checksum = checksum.to_vec();
     //let mut payload_vec: Vec<u8> = Vec::new();
