@@ -2,19 +2,19 @@ use super::*;
 
 #[derive(Clone, Debug)]
 pub struct VersionPayload {
-    version: [u8; 4],
-    services: [u8; 8],
-    timestamp: [u8; 8],
+    version: ByteSlice<4>,
+    services: ByteSlice<8>,
+    timestamp: ByteSlice<8>,
     // The three datum that composes addr_recv
     // are defined in NetworkAddress enum.
     addr_recv: NetworkAddress, // addr_recv: [u8; 26],
     // Fields below require version ≥ 106
-    addr_from: [u8; 26],
-    nonce: [u8; 8],
-    user_agent: [u8; USER_AGENT_SIZE], // This variable size is fixated here for code simplicity.
-    start_height: [u8; 4],
+    addr_from: ByteSlice<26>,
+    nonce: ByteSlice<8>,
+    user_agent: ByteSlice<USER_AGENT_SIZE>, // This variable size is fixated here for code simplicity.
+    start_height: ByteSlice<4>,
     // Fields below require version ≥ 70001
-    relay: [u8; 1]
+    relay: ByteSlice<1>
 }
 
 impl PayloadBuilder<VersionPayload> {

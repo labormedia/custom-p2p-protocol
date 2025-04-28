@@ -23,6 +23,8 @@ use crate::{
     protocol_builder::PayloadBuilder,
 };
 
+pub type ByteSlice<const N: usize> = [u8; N];
+
 // Opaque types
 
 mod version;
