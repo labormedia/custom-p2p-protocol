@@ -141,3 +141,8 @@ impl EndianRead for MessageHeader {
         be_message_header
     }
 }
+
+#[test]
+fn HEADER_SIZE_is_the_sum_of_its_components_size() {
+    assert_eq!(HEADER_SIZE, START_STRING_SIZE + COMMAND_NAME_SIZE + PAYLOAD_SIZE_SIZE + CHECKSUM_SIZE);
+}

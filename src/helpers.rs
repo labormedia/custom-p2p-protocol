@@ -46,7 +46,8 @@ pub fn le_checksum(data: impl AsRef<[u8]>) -> [u8; CHECKSUM_SIZE] {
 
 pub fn be_checksum(data: &[u8]) -> [u8; CHECKSUM_SIZE] {
     let mut hasher = Sha256::new();
-    hasher.update(data);
+    let data_rev: Vec<u8> = (*data.iter().rev().map(|x| *x ).collect::<Vec<u8>>()).to_vec();  //reverses the order
+    hasher.update(&data_rev);
     let hash = hasher.finalize();
 
     let mut hasher = Sha256::new();
@@ -56,7 +57,7 @@ pub fn be_checksum(data: &[u8]) -> [u8; CHECKSUM_SIZE] {
     let mut buf = [0u8; CHECKSUM_SIZE];
     buf.clone_from_slice(&hash[..CHECKSUM_SIZE]);
 
-    [buf[3], buf[2], buf[1], buf[0]]
+    [buf[0], buf[1], buf[2], buf[3]]
 }
 
 pub fn to_bytes_from_slice(str_slice: &str) -> Vec<u8> {

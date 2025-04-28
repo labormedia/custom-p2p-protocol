@@ -6,7 +6,7 @@ extern crate tokio;
 use std::{
     net::SocketAddr,
     println,
-    str
+    str,
 };
 use core::net::{
     IpAddr,
@@ -21,7 +21,7 @@ use alloc::{
 use futures::future::select_all;
 
 use tokio::{
-    io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader, BufWriter},
+    io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader, BufWriter, self},
     net::{
         lookup_host, 
         TcpStream
@@ -49,7 +49,11 @@ use p2p_handshake::{
         EndianRead,
         Builder,
     },
-    helpers::le_checksum,
+    helpers::{
+        le_checksum,
+        be_checksum,
+        long_checksum,
+    },
 };
 
 #[tokio::main]
@@ -57,6 +61,7 @@ async fn main() -> Result<(), errors::ErrorSide> {
     let resolved_addrs: Vec<_> = lookup_host(("seed.bitcoin.sipa.be", 8333)).await?.collect();
     let mut streams: Vec<_> = resolved_addrs
         .into_iter()
+        .take(20)
         .map(|x| version_handshake(x))
         .map(Box::pin)
         .collect();
@@ -86,6 +91,7 @@ async fn version_handshake(target: SocketAddr) -> Result<Vec<u8>, Box<dyn errors
     println!("Resolving for {:?}", target);
     let mut stream = TcpStream::connect(target).await?;
     println!("From {:?}", stream.local_addr()?.ip());
+    let (mut rx, mut tx) = stream.split();
     let target = match target {
         SocketAddr::V4(v4_address) => {
             v4_address.ip().to_ipv6_mapped().octets()
@@ -122,45 +128,30 @@ async fn version_handshake(target: SocketAddr) -> Result<Vec<u8>, Box<dyn errors
 }
 
 async fn check_bufread(label: &str, mut payload: &mut BufWriter<BufReader<TcpStream>>) -> Result<Vec<u8>, Box<dyn errors::Error>> {
-    println!("Buffer size : {}", payload.buffer().len());
+    println!("Incoming payload ... : {:?}", payload);
     let mut header: [u8; HEADER_SIZE] = [0u8; HEADER_SIZE];
     payload.read_exact(&mut header).await?;
     println!("Header : {:?}", header);
-    let message_header = MessageHeader::from_le_bytes(header);
+    
     /*
-    let mut start_string = [0u8; 4];
-    let mut command_name = [0u8; 12];
-    let mut payload_size = [0u8; 4];
-    let mut checksum = [0u8; 4];
-    if payload.buffer().len() > 0 { println!("Buffer size : {}", payload.buffer().len()) }; 
-    payload.read_exact(&mut start_string).await?;
-    payload.read_exact(&mut command_name).await?;
-    payload.read_exact(&mut payload_size).await?;
-    payload.read_exact(&mut checksum).await?;
-    */
-    
-    let size = u32::from_be_bytes(message_header.payload_size);
-
+    let message_header = MessageHeader::from_le_bytes(header);
+    let payload_size = u32::from_le_bytes(message_header.payload_size);
     #[cfg(debug_assertions)]
-    println!("Check size {:?}", size);
-    let mut buf = Vec::with_capacity(size as usize);
-    payload.read_to_end(&mut buf).await?;
-    
+    println!("Check payload_size {:?} {:?}", payload_size, payload);
     #[cfg(debug_assertions)]
     println!("Received Header for label {} {:?}", label, message_header);
+    */
+    
+    let mut buf = Vec::new(); //with_capacity(payload_size as usize);
+    payload.read_to_end(&mut buf).await?;
+    println!("Check buffer size {:?} {:?}", buf.len(), buf);
+    let long_checksum: Vec<u8> = long_checksum(&buf);
+    
     #[cfg(debug_assertions)]
     println!("With payload for label {} {:?}", label, buf);
     #[cfg(debug_assertions)]
-    println!("With checksum for label {} {:?}", label, le_checksum(&buf));
+    println!("With checksum for label {} {:?}", label, long_checksum);
 
-    //let checksum = checksum.to_vec();
-    //let mut payload_vec: Vec<u8> = Vec::new();
     let my_bytes = payload.fill_buf().await?;
-    //payload.consume(24);
-    // Read payload bytes
-    //for _ in 0..payload_size {
-    //    payload_vec.push(payload.read_u8().await?);
-    //}
-    //println!("RX Payload bytes {:?}", my_bytes.clone());
     Ok(my_bytes.to_vec())
 }
